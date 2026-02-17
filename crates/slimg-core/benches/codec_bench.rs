@@ -3,6 +3,8 @@ use slimg_core::{
     codec::get_codec, EncodeOptions, Format, ImageData,
 };
 
+const BENCH_IMAGE_SIZE: u32 = 512;
+
 fn generate_test_image(width: u32, height: u32) -> ImageData {
     let mut data = vec![0u8; (width * height * 4) as usize];
     for y in 0..height {
@@ -36,8 +38,8 @@ fn decodable_formats() -> Vec<Format> {
 }
 
 fn bench_encode(c: &mut Criterion) {
-    let image = generate_test_image(512, 512);
-    let pixel_count = 512u64 * 512;
+    let image = generate_test_image(BENCH_IMAGE_SIZE, BENCH_IMAGE_SIZE);
+    let pixel_count = (BENCH_IMAGE_SIZE as u64) * (BENCH_IMAGE_SIZE as u64);
     let options = EncodeOptions { quality: 80 };
 
     let mut group = c.benchmark_group("encode");
@@ -57,7 +59,7 @@ fn bench_encode(c: &mut Criterion) {
 }
 
 fn bench_decode(c: &mut Criterion) {
-    let image = generate_test_image(512, 512);
+    let image = generate_test_image(BENCH_IMAGE_SIZE, BENCH_IMAGE_SIZE);
     let options = EncodeOptions { quality: 80 };
 
     let mut group = c.benchmark_group("decode");
