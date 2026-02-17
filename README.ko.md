@@ -65,6 +65,9 @@ slimg convert photo.png --format avif --quality 60
 
 # 디렉토리 내 모든 이미지 변환
 slimg convert ./images --format webp --output ./output --recursive
+
+# 병렬 작업 수를 4개로 제한
+slimg convert ./images --format webp --recursive --jobs 4
 ```
 
 ### optimize
@@ -80,6 +83,9 @@ slimg optimize photo.jpg --overwrite
 
 # 디렉토리 내 이미지 일괄 최적화
 slimg optimize ./images --quality 70 --recursive
+
+# 병렬 작업 수를 2개로 제한 (대용량 이미지에 유용)
+slimg optimize ./images --recursive --jobs 2
 ```
 
 ### resize
@@ -103,27 +109,18 @@ slimg resize photo.jpg --scale 0.5
 slimg resize photo.jpg --width 400 --format webp --output thumb.webp
 ```
 
-## 셸 자동완성
+## 배치 처리
 
-사용하는 셸에 맞게 자동완성을 생성하고 설치합니다:
+`--recursive` 옵션으로 디렉토리를 처리할 때, slimg은 [rayon](https://github.com/rayon-rs/rayon)을 통해 모든 CPU 코어를 활용합니다. `--jobs` 옵션으로 병렬 수를 제한할 수 있습니다 (대용량 이미지나 메모리가 제한된 환경에서 유용).
 
-```bash
-# Zsh
-slimg completions zsh > ~/.zfunc/_slimg
-
-# Bash
-slimg completions bash > /usr/local/etc/bash_completion.d/slimg
-
-# Fish
-slimg completions fish > ~/.config/fish/completions/slimg.fish
+```
+# 모든 코어 대신 4개 스레드만 사용
+slimg convert ./images --format webp --recursive --jobs 4
 ```
 
-Zsh의 경우 `~/.zfunc`가 `fpath`에 포함되어 있어야 합니다. `~/.zshrc`에 다음을 추가하세요:
+**에러 처리** — 파일 처리 중 오류가 발생하면 해당 파일을 건너뛰고 나머지를 계속 처리합니다. 실패한 파일 목록은 마지막에 요약 출력됩니다.
 
-```zsh
-fpath=(~/.zfunc $fpath)
-autoload -Uz compinit && compinit
-```
+**안전한 덮어쓰기** — `--overwrite` 사용 시, 임시 파일에 먼저 쓴 뒤 성공하면 이름을 변경합니다. 인코딩이 실패하면 원본 파일이 보존됩니다.
 
 ## 라이브러리
 

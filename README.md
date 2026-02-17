@@ -65,6 +65,9 @@ slimg convert photo.png --format avif --quality 60
 
 # Convert all images in a directory
 slimg convert ./images --format webp --output ./output --recursive
+
+# Limit to 4 parallel jobs
+slimg convert ./images --format webp --recursive --jobs 4
 ```
 
 ### optimize
@@ -80,6 +83,9 @@ slimg optimize photo.jpg --overwrite
 
 # Optimize a directory of images
 slimg optimize ./images --quality 70 --recursive
+
+# Limit to 2 parallel jobs (useful for large images)
+slimg optimize ./images --recursive --jobs 2
 ```
 
 ### resize
@@ -103,27 +109,18 @@ slimg resize photo.jpg --scale 0.5
 slimg resize photo.jpg --width 400 --format webp --output thumb.webp
 ```
 
-## Shell Completions
+## Batch Processing
 
-Generate and install completions for your shell:
+When processing directories with `--recursive`, slimg uses all available CPU cores via [rayon](https://github.com/rayon-rs/rayon). Use `--jobs` to limit parallelism (useful for large images or memory-constrained environments).
 
-```bash
-# Zsh
-slimg completions zsh > ~/.zfunc/_slimg
-
-# Bash
-slimg completions bash > /usr/local/etc/bash_completion.d/slimg
-
-# Fish
-slimg completions fish > ~/.config/fish/completions/slimg.fish
+```
+# Use 4 threads instead of all cores
+slimg convert ./images --format webp --recursive --jobs 4
 ```
 
-For Zsh, make sure `~/.zfunc` is in your `fpath`. Add to `~/.zshrc`:
+**Error handling** — If a file fails to process, slimg skips it and continues with the rest. A summary of failed files is printed at the end.
 
-```zsh
-fpath=(~/.zfunc $fpath)
-autoload -Uz compinit && compinit
-```
+**Safe overwrite** — When using `--overwrite`, slimg writes to a temporary file first and renames it on success. If encoding fails, the original file is preserved.
 
 ## Library
 
