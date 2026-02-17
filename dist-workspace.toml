@@ -22,8 +22,8 @@ github-build-setup = "build-setup.yml"
 
 # System dependencies required for building
 [dist.dependencies.homebrew]
-nasm = '*'
-dav1d = '*'
+nasm = { stage = ["build"] }
+dav1d = { stage = ["build", "run"] }
 
 [dist.dependencies.apt]
 nasm = '*'
