@@ -5,6 +5,7 @@ pub mod resize;
 use std::path::{Path, PathBuf};
 
 use clap::ValueEnum;
+use indicatif::{ProgressBar, ProgressStyle};
 use slimg_core::Format;
 
 /// Image format argument for CLI (excludes JXL which cannot be encoded).
@@ -50,6 +51,35 @@ pub(crate) fn collect_files(path: &Path, recursive: bool) -> anyhow::Result<Vec<
     collect_dir(path, recursive, &mut files)?;
     files.sort();
     Ok(files)
+}
+
+/// Configure rayon's global thread pool.
+/// When `jobs` is `None`, rayon defaults to the number of logical CPUs.
+pub(crate) fn configure_thread_pool(jobs: Option<usize>) -> anyhow::Result<()> {
+    if let Some(n) = jobs {
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(n)
+            .build_global()
+            .map_err(|e| anyhow::anyhow!("failed to configure thread pool: {e}"))?;
+    }
+    Ok(())
+}
+
+/// Create a progress bar for batch processing.
+/// Returns a hidden bar when processing a single file.
+pub(crate) fn make_progress_bar(total: usize) -> ProgressBar {
+    if total <= 1 {
+        return ProgressBar::hidden();
+    }
+
+    let pb = ProgressBar::new(total as u64);
+    pb.set_style(
+        ProgressStyle::default_bar()
+            .template("[{elapsed_precise}] [{bar:30}] {pos}/{len} ({eta})")
+            .unwrap()
+            .progress_chars("=> "),
+    );
+    pb
 }
 
 fn collect_dir(dir: &Path, recursive: bool, out: &mut Vec<PathBuf>) -> anyhow::Result<()> {

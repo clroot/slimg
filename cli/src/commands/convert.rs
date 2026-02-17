@@ -5,8 +5,7 @@ use clap::Args;
 use rayon::prelude::*;
 use slimg_core::{PipelineOptions, convert, decode_file, output_path};
 
-use super::FormatArg;
-use super::collect_files;
+use super::{FormatArg, collect_files, configure_thread_pool, make_progress_bar};
 
 #[derive(Debug, Args)]
 pub struct ConvertArgs {
@@ -28,6 +27,10 @@ pub struct ConvertArgs {
     /// Process subdirectories recursively
     #[arg(long)]
     pub recursive: bool,
+
+    /// Number of parallel jobs (defaults to CPU count)
+    #[arg(short, long)]
+    pub jobs: Option<usize>,
 }
 
 pub fn run(args: ConvertArgs) -> anyhow::Result<()> {
@@ -38,11 +41,15 @@ pub fn run(args: ConvertArgs) -> anyhow::Result<()> {
         anyhow::bail!("no image files found in {}", args.input.display());
     }
 
+    configure_thread_pool(args.jobs)?;
+
     let options = PipelineOptions {
         format: target_format,
         quality: args.quality,
         resize: None,
     };
+
+    let pb = make_progress_bar(files.len());
 
     files
         .par_iter()
@@ -66,17 +73,20 @@ pub fn run(args: ConvertArgs) -> anyhow::Result<()> {
                 0.0
             };
 
-            eprintln!(
+            pb.println(format!(
                 "{} -> {} ({} -> {} bytes, {:.1}%)",
                 file.display(),
                 out.display(),
                 original_size,
                 new_size,
                 ratio,
-            );
+            ));
+            pb.inc(1);
 
             Ok(())
         })?;
+
+    pb.finish_and_clear();
 
     Ok(())
 }

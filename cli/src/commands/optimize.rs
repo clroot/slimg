@@ -4,7 +4,7 @@ use clap::Args;
 use rayon::prelude::*;
 use slimg_core::{optimize, output_path};
 
-use super::collect_files;
+use super::{collect_files, configure_thread_pool, make_progress_bar};
 
 #[derive(Debug, Args)]
 pub struct OptimizeArgs {
@@ -26,6 +26,10 @@ pub struct OptimizeArgs {
     /// Process subdirectories recursively
     #[arg(long)]
     pub recursive: bool,
+
+    /// Number of parallel jobs (defaults to CPU count)
+    #[arg(short, long)]
+    pub jobs: Option<usize>,
 }
 
 pub fn run(args: OptimizeArgs) -> anyhow::Result<()> {
@@ -34,6 +38,10 @@ pub fn run(args: OptimizeArgs) -> anyhow::Result<()> {
     if files.is_empty() {
         anyhow::bail!("no image files found in {}", args.input.display());
     }
+
+    configure_thread_pool(args.jobs)?;
+
+    let pb = make_progress_bar(files.len());
 
     files
         .par_iter()
@@ -62,25 +70,29 @@ pub fn run(args: OptimizeArgs) -> anyhow::Result<()> {
                     0.0
                 };
 
-                eprintln!(
+                pb.println(format!(
                     "{} -> {} ({} -> {} bytes, {:.1}%)",
                     file.display(),
                     out.display(),
                     original_size,
                     new_size,
                     ratio,
-                );
+                ));
             } else {
-                eprintln!(
+                pb.println(format!(
                     "{} -> skipped (optimized size {} >= original {})",
                     file.display(),
                     new_size,
                     original_size,
-                );
+                ));
             }
+
+            pb.inc(1);
 
             Ok(())
         })?;
+
+    pb.finish_and_clear();
 
     Ok(())
 }
