@@ -9,11 +9,29 @@ A fast image optimization CLI. Convert, compress, and resize images using modern
 | JPEG   | Yes    | Yes    | MozJPEG encoder for superior compression |
 | PNG    | Yes    | Yes    | OxiPNG optimizer with Zopfli compression |
 | WebP   | Yes    | Yes    | Lossy encoding via libwebp |
-| AVIF   | Yes    | Yes    | ravif encoder (AV1-based) |
+| AVIF   | macOS only | Yes | ravif encoder; decoding requires dav1d (macOS via Homebrew) |
 | QOI    | Yes    | Yes    | Lossless, fast encode/decode |
 | JPEG XL| Yes    | No     | Decode-only (GPL license restriction) |
 
 ## Installation
+
+### Homebrew (macOS / Linux)
+
+```
+brew install clroot/tap/slimg
+```
+
+### Pre-built binaries
+
+Download from [GitHub Releases](https://github.com/clroot/slimg/releases/latest):
+
+| Platform | File |
+|----------|------|
+| macOS (Apple Silicon) | `slimg-aarch64-apple-darwin.tar.xz` |
+| macOS (Intel) | `slimg-x86_64-apple-darwin.tar.xz` |
+| Linux (x86_64) | `slimg-x86_64-unknown-linux-gnu.tar.xz` |
+| Linux (ARM64) | `slimg-aarch64-unknown-linux-gnu.tar.xz` |
+| Windows (x86_64) | `slimg-x86_64-pc-windows-msvc.zip` |
 
 ### From source
 
@@ -23,12 +41,12 @@ cd slimg
 cargo install --path cli
 ```
 
-### Build requirements
+#### Build requirements
 
 - Rust 1.85+ (edition 2024)
 - C compiler (cc)
-- nasm (for MozJPEG assembly optimizations)
-- CMake (for native codec builds)
+- nasm (for MozJPEG / rav1e assembly optimizations)
+- dav1d (macOS only, for AVIF decoding)
 
 ## Usage
 
