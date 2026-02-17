@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use slimg_core::codec::{get_codec, EncodeOptions};
 use slimg_core::resize::resize;
 use slimg_core::{convert, optimize, Format, ImageData, PipelineOptions, ResizeMode};
@@ -40,7 +40,9 @@ fn bench_convert(c: &mut Criterion) {
         v
     };
 
+    let pixel_count = (BENCH_IMAGE_SIZE as u64) * (BENCH_IMAGE_SIZE as u64);
     let mut group = c.benchmark_group("convert");
+    group.throughput(Throughput::Elements(pixel_count));
 
     for (name, src_format, dst_format) in &conversions {
         // Pre-encode the test image in the source format, then decode it.
@@ -69,17 +71,23 @@ fn bench_convert(c: &mut Criterion) {
 fn bench_optimize(c: &mut Criterion) {
     let image = generate_test_image(BENCH_IMAGE_SIZE, BENCH_IMAGE_SIZE);
 
-    let formats = vec![
-        ("Jpeg", Format::Jpeg),
-        ("Png", Format::Png),
-        ("WebP", Format::WebP),
-    ];
+    let formats = {
+        let mut v = vec![
+            ("Jpeg", Format::Jpeg),
+            ("Png", Format::Png),
+            ("WebP", Format::WebP),
+        ];
+        #[cfg(target_os = "macos")]
+        v.push(("Avif", Format::Avif));
+        v
+    };
 
     let mut group = c.benchmark_group("optimize");
 
     for (name, format) in &formats {
         let encoded = pre_encode(&image, *format, 90);
 
+        group.throughput(Throughput::Bytes(encoded.len() as u64));
         group.bench_with_input(
             BenchmarkId::from_parameter(name),
             &encoded,
@@ -98,11 +106,14 @@ fn bench_resize(c: &mut Criterion) {
     let modes: Vec<(&str, ResizeMode)> = vec![
         ("width_256", ResizeMode::Width(256)),
         ("height_256", ResizeMode::Height(256)),
+        ("exact_256x256", ResizeMode::Exact(256, 256)),
         ("scale_0.5", ResizeMode::Scale(0.5)),
         ("fit_256x256", ResizeMode::Fit(256, 256)),
     ];
 
+    let pixel_count = (BENCH_IMAGE_SIZE as u64) * (BENCH_IMAGE_SIZE as u64);
     let mut group = c.benchmark_group("resize");
+    group.throughput(Throughput::Elements(pixel_count));
 
     for (name, mode) in &modes {
         group.bench_with_input(
