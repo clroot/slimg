@@ -17,3 +17,15 @@ hosting = "github"
 tap = "clroot/homebrew-tap"
 # Publish Homebrew formula on release
 publish-jobs = ["homebrew"]
+
+# System dependencies required for building
+[dist.dependencies.homebrew]
+nasm = '*'
+dav1d = '*'
+
+[dist.dependencies.apt]
+nasm = '*'
+libdav1d-dev = '*'
+
+[dist.dependencies.chocolatey]
+nasm = '*'

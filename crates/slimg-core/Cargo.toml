@@ -6,7 +6,7 @@ license = "MIT OR Apache-2.0"
 description = "Image optimization library — encode, decode, convert, resize"
 
 [dependencies]
-image = { version = "0.25", features = ["avif-native"] }
+image = "0.25"
 mozjpeg = "0.10"
 oxipng = { version = "10", default-features = false, features = ["parallel", "zopfli"] }
 imgref = "1"
@@ -15,3 +15,6 @@ ravif = "0.13"
 rgb = "0.8"
 thiserror = "2"
 webp = { version = "0.3", default-features = false }
+
+[target.'cfg(not(windows))'.dependencies]
+image = { version = "0.25", features = ["avif-native"] }

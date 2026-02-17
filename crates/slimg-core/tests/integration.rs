@@ -74,13 +74,11 @@ fn convert_with_resize() {
 fn roundtrip_all_encodable_formats() {
     let image = create_test_image();
 
-    let formats = [
-        Format::Jpeg,
-        Format::Png,
-        Format::WebP,
-        Format::Avif,
-        Format::Qoi,
-    ];
+    let mut formats = vec![Format::Jpeg, Format::Png, Format::WebP, Format::Qoi];
+
+    // AVIF decoding is only available on non-Windows (requires dav1d)
+    #[cfg(not(target_os = "windows"))]
+    formats.push(Format::Avif);
 
     for fmt in formats {
         let options = PipelineOptions {

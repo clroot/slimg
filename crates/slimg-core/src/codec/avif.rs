@@ -15,14 +15,26 @@ impl Codec for AvifCodec {
     }
 
     fn decode(&self, data: &[u8]) -> Result<ImageData> {
-        let img = image::load_from_memory_with_format(data, image::ImageFormat::Avif)
-            .map_err(|e| Error::Decode(format!("avif decode: {e}")))?;
+        #[cfg(not(target_os = "windows"))]
+        {
+            let img = image::load_from_memory_with_format(data, image::ImageFormat::Avif)
+                .map_err(|e| Error::Decode(format!("avif decode: {e}")))?;
 
-        let rgba = img.to_rgba8();
-        let width = rgba.width();
-        let height = rgba.height();
+            let rgba = img.to_rgba8();
+            let width = rgba.width();
+            let height = rgba.height();
 
-        Ok(ImageData::new(width, height, rgba.into_raw()))
+            Ok(ImageData::new(width, height, rgba.into_raw()))
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            let _ = data;
+            Err(Error::Decode(
+                "AVIF decoding is not supported on Windows. Use AVIF as an output format instead."
+                    .to_string(),
+            ))
+        }
     }
 
     fn encode(&self, image: &ImageData, options: &EncodeOptions) -> Result<Vec<u8>> {
@@ -85,6 +97,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(target_os = "windows"))]
     fn encode_and_decode_roundtrip() {
         let codec = AvifCodec;
         let original = create_test_image(64, 48);
