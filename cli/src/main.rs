@@ -1,3 +1,3 @@
 fn main() {
-    println!("slimg v{}", slimg_core::version());
+    println!("slimg v{}", env!("CARGO_PKG_VERSION"));
 }
