@@ -1,0 +1,10 @@
+[package]
+name = "slimg-core"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "Image optimization library — encode, decode, convert, resize"
+
+[dependencies]
+image = "0.25"
+thiserror = "2"
