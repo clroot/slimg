@@ -34,7 +34,7 @@ impl Codec for JpegCodec {
                 .finish()
                 .map_err(|e| Error::Decode(format!("mozjpeg finish: {e}")))?;
 
-            let rgba_data: Vec<u8> = pixels.into_iter().flat_map(|px| px).collect();
+            let rgba_data: Vec<u8> = pixels.into_iter().flatten().collect();
 
             Ok(ImageData::new(width, height, rgba_data))
         });

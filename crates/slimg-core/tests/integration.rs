@@ -102,10 +102,7 @@ fn roundtrip_all_encodable_formats() {
         let (decoded, detected_format) = decode(&result.data).unwrap_or_else(|e| {
             panic!("decoding {fmt:?} failed: {e}");
         });
-        assert_eq!(
-            detected_format, fmt,
-            "{fmt:?}: detected format mismatch",
-        );
+        assert_eq!(detected_format, fmt, "{fmt:?}: detected format mismatch",);
         assert_eq!(decoded.width, 100, "{fmt:?}: width mismatch");
         assert_eq!(decoded.height, 80, "{fmt:?}: height mismatch");
     }

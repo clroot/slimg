@@ -59,12 +59,11 @@ fn collect_dir(dir: &Path, recursive: bool, out: &mut Vec<PathBuf>) -> anyhow::R
 
         if path.is_dir() && recursive {
             collect_dir(&path, recursive, out)?;
-        } else if path.is_file() {
-            if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
-                if IMAGE_EXTENSIONS.contains(&ext.to_ascii_lowercase().as_str()) {
-                    out.push(path);
-                }
-            }
+        } else if path.is_file()
+            && let Some(ext) = path.extension().and_then(|e| e.to_str())
+            && IMAGE_EXTENSIONS.contains(&ext.to_ascii_lowercase().as_str())
+        {
+            out.push(path);
         }
     }
     Ok(())
