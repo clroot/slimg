@@ -1,3 +1,5 @@
+pub mod jpeg;
+
 use crate::error::Result;
 use crate::format::Format;
 

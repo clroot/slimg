@@ -7,4 +7,5 @@ description = "Image optimization library — encode, decode, convert, resize"
 
 [dependencies]
 image = "0.25"
+mozjpeg = "0.10"
 thiserror = "2"
