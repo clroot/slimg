@@ -103,6 +103,28 @@ slimg resize photo.jpg --scale 0.5
 slimg resize photo.jpg --width 400 --format webp --output thumb.webp
 ```
 
+## 셸 자동완성
+
+사용하는 셸에 맞게 자동완성을 생성하고 설치합니다:
+
+```bash
+# Zsh
+slimg completions zsh > ~/.zfunc/_slimg
+
+# Bash
+slimg completions bash > /usr/local/etc/bash_completion.d/slimg
+
+# Fish
+slimg completions fish > ~/.config/fish/completions/slimg.fish
+```
+
+Zsh의 경우 `~/.zfunc`가 `fpath`에 포함되어 있어야 합니다. `~/.zshrc`에 다음을 추가하세요:
+
+```zsh
+fpath=(~/.zfunc $fpath)
+autoload -Uz compinit && compinit
+```
+
 ## 라이브러리
 
 핵심 기능은 라이브러리 크레이트(`slimg-core`)로도 사용 가능합니다:

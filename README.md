@@ -103,6 +103,28 @@ slimg resize photo.jpg --scale 0.5
 slimg resize photo.jpg --width 400 --format webp --output thumb.webp
 ```
 
+## Shell Completions
+
+Generate and install completions for your shell:
+
+```bash
+# Zsh
+slimg completions zsh > ~/.zfunc/_slimg
+
+# Bash
+slimg completions bash > /usr/local/etc/bash_completion.d/slimg
+
+# Fish
+slimg completions fish > ~/.config/fish/completions/slimg.fish
+```
+
+For Zsh, make sure `~/.zfunc` is in your `fpath`. Add to `~/.zshrc`:
+
+```zsh
+fpath=(~/.zfunc $fpath)
+autoload -Uz compinit && compinit
+```
+
 ## Library
 
 The core functionality is available as a library crate (`slimg-core`):

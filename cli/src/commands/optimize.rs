@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use clap::Args;
+use rayon::prelude::*;
 use slimg_core::{optimize, output_path};
 
 use super::collect_files;
@@ -34,49 +35,52 @@ pub fn run(args: OptimizeArgs) -> anyhow::Result<()> {
         anyhow::bail!("no image files found in {}", args.input.display());
     }
 
-    for file in &files {
-        let original_data = std::fs::read(file)?;
-        let original_size = original_data.len() as u64;
+    files
+        .par_iter()
+        .try_for_each(|file| -> anyhow::Result<()> {
+            let original_data = std::fs::read(file)?;
+            let original_size = original_data.len() as u64;
 
-        let result = optimize(&original_data, args.quality)?;
-        let new_size = result.data.len() as u64;
+            let result = optimize(&original_data, args.quality)?;
+            let new_size = result.data.len() as u64;
 
-        let out = if args.overwrite {
-            file.clone()
-        } else {
-            output_path(file, result.format, args.output.as_deref())
-        };
-
-        // Only write if new size is smaller, unless overwriting explicitly
-        if new_size < original_size || args.overwrite {
-            if let Some(parent) = out.parent() {
-                std::fs::create_dir_all(parent)?;
-            }
-            result.save(&out)?;
-
-            let ratio = if original_size > 0 {
-                (new_size as f64 / original_size as f64) * 100.0
+            let out = if args.overwrite {
+                file.clone()
             } else {
-                0.0
+                output_path(file, result.format, args.output.as_deref())
             };
 
-            eprintln!(
-                "{} -> {} ({} -> {} bytes, {:.1}%)",
-                file.display(),
-                out.display(),
-                original_size,
-                new_size,
-                ratio,
-            );
-        } else {
-            eprintln!(
-                "{} -> skipped (optimized size {} >= original {})",
-                file.display(),
-                new_size,
-                original_size,
-            );
-        }
-    }
+            if new_size < original_size || args.overwrite {
+                if let Some(parent) = out.parent() {
+                    std::fs::create_dir_all(parent)?;
+                }
+                result.save(&out)?;
+
+                let ratio = if original_size > 0 {
+                    (new_size as f64 / original_size as f64) * 100.0
+                } else {
+                    0.0
+                };
+
+                eprintln!(
+                    "{} -> {} ({} -> {} bytes, {:.1}%)",
+                    file.display(),
+                    out.display(),
+                    original_size,
+                    new_size,
+                    ratio,
+                );
+            } else {
+                eprintln!(
+                    "{} -> skipped (optimized size {} >= original {})",
+                    file.display(),
+                    new_size,
+                    original_size,
+                );
+            }
+
+            Ok(())
+        })?;
 
     Ok(())
 }
