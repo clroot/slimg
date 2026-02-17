@@ -2,6 +2,8 @@
 
 A fast image optimization CLI. Convert, compress, and resize images using modern codecs.
 
+[한국어](./README.ko.md)
+
 ## Supported Formats
 
 | Format | Decode | Encode | Notes |
