@@ -18,3 +18,14 @@ webp = { version = "0.3", default-features = false }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 image = { version = "0.25", features = ["avif-native"] }
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "codec_bench"
+harness = false
+
+[[bench]]
+name = "pipeline_bench"
+harness = false
