@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "Image optimization CLI — convert, optimize, resize"
+repository = "https://github.com/clroot/slimg"
+homepage = "https://github.com/clroot/slimg"
 
 [dependencies]
 slimg-core = { path = "../crates/slimg-core" }
