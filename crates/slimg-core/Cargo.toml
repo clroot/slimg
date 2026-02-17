@@ -10,3 +10,4 @@ image = "0.25"
 mozjpeg = "0.10"
 oxipng = { version = "10", default-features = false, features = ["parallel", "zopfli"] }
 thiserror = "2"
+webp = { version = "0.3", default-features = false }

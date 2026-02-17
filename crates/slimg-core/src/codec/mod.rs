@@ -1,5 +1,6 @@
 pub mod jpeg;
 pub mod png;
+pub mod webp;
 
 use crate::error::Result;
 use crate::format::Format;
@@ -74,6 +75,7 @@ pub fn get_codec(format: Format) -> Box<dyn Codec> {
     match format {
         Format::Jpeg => Box::new(jpeg::JpegCodec),
         Format::Png => Box::new(png::PngCodec),
+        Format::WebP => Box::new(webp::WebPCodec),
         _ => unimplemented!("codec for {format:?}"),
     }
 }
