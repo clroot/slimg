@@ -1,6 +1,9 @@
 mod commands;
 
-use clap::{Parser, Subcommand};
+use std::io;
+
+use clap::{CommandFactory, Parser, Subcommand};
+use clap_complete::Shell;
 
 #[derive(Parser)]
 #[command(name = "slimg", version, about = "Image optimization CLI")]
@@ -17,6 +20,12 @@ enum Commands {
     Optimize(commands::optimize::OptimizeArgs),
     /// Resize image with optional format conversion
     Resize(commands::resize::ResizeArgs),
+    /// Generate shell completions
+    Completions {
+        /// Shell to generate completions for
+        #[arg(value_enum)]
+        shell: Shell,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -25,5 +34,9 @@ fn main() -> anyhow::Result<()> {
         Commands::Convert(args) => commands::convert::run(args),
         Commands::Optimize(args) => commands::optimize::run(args),
         Commands::Resize(args) => commands::resize::run(args),
+        Commands::Completions { shell } => {
+            clap_complete::generate(shell, &mut Cli::command(), "slimg", &mut io::stdout());
+            Ok(())
+        }
     }
 }
