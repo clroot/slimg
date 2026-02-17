@@ -10,6 +10,7 @@ image = { version = "0.25", features = ["avif-native"] }
 mozjpeg = "0.10"
 oxipng = { version = "10", default-features = false, features = ["parallel", "zopfli"] }
 imgref = "1"
+rapid-qoi = "0.6"
 ravif = "0.13"
 rgb = "0.8"
 thiserror = "2"

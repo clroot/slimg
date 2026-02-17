@@ -1,6 +1,8 @@
 pub mod avif;
 pub mod jpeg;
+pub mod jxl;
 pub mod png;
+pub mod qoi;
 pub mod webp;
 
 use crate::error::Result;
@@ -78,7 +80,8 @@ pub fn get_codec(format: Format) -> Box<dyn Codec> {
         Format::Png => Box::new(png::PngCodec),
         Format::WebP => Box::new(webp::WebPCodec),
         Format::Avif => Box::new(avif::AvifCodec),
-        _ => unimplemented!("codec for {format:?}"),
+        Format::Jxl => Box::new(jxl::JxlCodec),
+        Format::Qoi => Box::new(qoi::QoiCodec),
     }
 }
 
