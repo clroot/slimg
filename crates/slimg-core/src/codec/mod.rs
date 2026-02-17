@@ -1,4 +1,5 @@
 pub mod jpeg;
+pub mod png;
 
 use crate::error::Result;
 use crate::format::Format;
@@ -66,6 +67,15 @@ pub trait Codec {
 
     /// Encode `ImageData` into the codec's file format.
     fn encode(&self, image: &ImageData, options: &EncodeOptions) -> Result<Vec<u8>>;
+}
+
+/// Return the appropriate codec for the given format.
+pub fn get_codec(format: Format) -> Box<dyn Codec> {
+    match format {
+        Format::Jpeg => Box::new(jpeg::JpegCodec),
+        Format::Png => Box::new(png::PngCodec),
+        _ => unimplemented!("codec for {format:?}"),
+    }
 }
 
 #[cfg(test)]
