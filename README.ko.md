@@ -122,6 +122,10 @@ slimg convert ./images --format webp --recursive --jobs 4
 
 **안전한 덮어쓰기** — `--overwrite` 사용 시, 임시 파일에 먼저 쓴 뒤 성공하면 이름을 변경합니다. 인코딩이 실패하면 원본 파일이 보존됩니다.
 
+## 벤치마크
+
+모든 코덱과 파이프라인 연산의 상세 성능 측정 결과는 [docs/benchmarks.md](./docs/benchmarks.md)를 참고하세요.
+
 ## 라이브러리
 
 핵심 기능은 라이브러리 크레이트(`slimg-core`)로도 사용 가능합니다:

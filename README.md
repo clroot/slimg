@@ -122,6 +122,10 @@ slimg convert ./images --format webp --recursive --jobs 4
 
 **Safe overwrite** — When using `--overwrite`, slimg writes to a temporary file first and renames it on success. If encoding fails, the original file is preserved.
 
+## Benchmarks
+
+See [docs/benchmarks.md](./docs/benchmarks.md) for detailed performance measurements across all codecs and pipeline operations.
+
 ## Library
 
 The core functionality is available as a library crate (`slimg-core`):
