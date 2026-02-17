@@ -14,3 +14,6 @@ clap_complete = "4.5"
 anyhow = "1"
 rayon = "1.11.0"
 indicatif = "0.18.4"
+
+[dev-dependencies]
+tempfile = "3.25.0"

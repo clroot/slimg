@@ -2,7 +2,9 @@ pub mod convert;
 pub mod optimize;
 pub mod resize;
 
+use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 use clap::ValueEnum;
 use indicatif::{ProgressBar, ProgressStyle};
@@ -82,6 +84,62 @@ pub(crate) fn make_progress_bar(total: usize) -> ProgressBar {
     pb
 }
 
+/// Write data to a file safely. When overwriting, writes to a temp file first
+/// and renames on success, so the original is preserved if encoding fails.
+pub(crate) fn safe_write(path: &Path, data: &[u8], overwrite: bool) -> anyhow::Result<()> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    if overwrite && path.exists() {
+        let mut tmp = path.as_os_str().to_os_string();
+        tmp.push(".slimg_tmp");
+        let tmp = PathBuf::from(tmp);
+        fs::write(&tmp, data)?;
+        fs::rename(&tmp, path)?;
+    } else {
+        fs::write(path, data)?;
+    }
+
+    Ok(())
+}
+
+/// Collector for errors that occur during batch processing.
+/// Thread-safe — can be shared across rayon workers.
+pub(crate) struct ErrorCollector {
+    errors: Mutex<Vec<(PathBuf, String)>>,
+}
+
+impl ErrorCollector {
+    pub fn new() -> Self {
+        Self {
+            errors: Mutex::new(Vec::new()),
+        }
+    }
+
+    pub fn push(&self, path: &Path, err: &anyhow::Error) {
+        self.errors
+            .lock()
+            .unwrap()
+            .push((path.to_path_buf(), format!("{err:#}")));
+    }
+
+    /// Print error summary and return the error count.
+    pub fn summarize(&self, pb: &ProgressBar) -> usize {
+        let errors = self.errors.lock().unwrap();
+        if errors.is_empty() {
+            return 0;
+        }
+
+        pb.println(format!("\n{} file(s) failed:", errors.len()));
+        for (path, msg) in errors.iter() {
+            pb.println(format!("  {} — {}", path.display(), msg));
+        }
+
+        errors.len()
+    }
+}
+
 fn collect_dir(dir: &Path, recursive: bool, out: &mut Vec<PathBuf>) -> anyhow::Result<()> {
     for entry in std::fs::read_dir(dir)? {
         let entry = entry?;
@@ -97,4 +155,168 @@ fn collect_dir(dir: &Path, recursive: bool, out: &mut Vec<PathBuf>) -> anyhow::R
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::TempDir;
+
+    // ── safe_write ──────────────────────────────────────────
+
+    #[test]
+    fn safe_write_creates_new_file() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("out.bin");
+
+        safe_write(&path, b"hello", false).unwrap();
+
+        assert_eq!(fs::read(&path).unwrap(), b"hello");
+    }
+
+    #[test]
+    fn safe_write_creates_parent_dirs() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("a/b/c/out.bin");
+
+        safe_write(&path, b"nested", false).unwrap();
+
+        assert_eq!(fs::read(&path).unwrap(), b"nested");
+    }
+
+    #[test]
+    fn safe_write_overwrite_replaces_content() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("file.jpg");
+        fs::write(&path, b"original").unwrap();
+
+        safe_write(&path, b"optimized", true).unwrap();
+
+        assert_eq!(fs::read(&path).unwrap(), b"optimized");
+    }
+
+    #[test]
+    fn safe_write_overwrite_leaves_no_temp_file() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("file.jpg");
+        fs::write(&path, b"original").unwrap();
+
+        safe_write(&path, b"new", true).unwrap();
+
+        let tmp = dir.path().join("file.jpg.slimg_tmp");
+        assert!(!tmp.exists(), "temp file should be cleaned up after rename");
+    }
+
+    #[test]
+    fn safe_write_overwrite_no_collision_different_extensions() {
+        let dir = TempDir::new().unwrap();
+        let jpg = dir.path().join("photo.jpg");
+        let png = dir.path().join("photo.png");
+        fs::write(&jpg, b"jpg-original").unwrap();
+        fs::write(&png, b"png-original").unwrap();
+
+        // Simulate parallel overwrite of both files
+        safe_write(&jpg, b"jpg-new", true).unwrap();
+        safe_write(&png, b"png-new", true).unwrap();
+
+        assert_eq!(fs::read(&jpg).unwrap(), b"jpg-new");
+        assert_eq!(fs::read(&png).unwrap(), b"png-new");
+
+        // Verify distinct temp paths
+        let jpg_tmp = dir.path().join("photo.jpg.slimg_tmp");
+        let png_tmp = dir.path().join("photo.png.slimg_tmp");
+        assert!(!jpg_tmp.exists());
+        assert!(!png_tmp.exists());
+    }
+
+    #[test]
+    fn safe_write_overwrite_preserves_original_on_nonexistent_target() {
+        // When the file doesn't exist yet, overwrite=true still creates it
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("new.jpg");
+
+        safe_write(&path, b"data", true).unwrap();
+
+        assert_eq!(fs::read(&path).unwrap(), b"data");
+    }
+
+    // ── ErrorCollector ──────────────────────────────────────
+
+    #[test]
+    fn error_collector_empty_returns_zero() {
+        let ec = ErrorCollector::new();
+        let pb = ProgressBar::hidden();
+
+        assert_eq!(ec.summarize(&pb), 0);
+    }
+
+    #[test]
+    fn error_collector_counts_errors() {
+        let ec = ErrorCollector::new();
+        ec.push(Path::new("a.jpg"), &anyhow::anyhow!("decode failed"));
+        ec.push(Path::new("b.png"), &anyhow::anyhow!("io error"));
+
+        let pb = ProgressBar::hidden();
+        assert_eq!(ec.summarize(&pb), 2);
+    }
+
+    #[test]
+    fn error_collector_is_thread_safe() {
+        use rayon::prelude::*;
+
+        let ec = ErrorCollector::new();
+        let paths: Vec<PathBuf> = (0..100)
+            .map(|i| PathBuf::from(format!("{i}.jpg")))
+            .collect();
+
+        paths.par_iter().for_each(|p| {
+            ec.push(p, &anyhow::anyhow!("error"));
+        });
+
+        let pb = ProgressBar::hidden();
+        assert_eq!(ec.summarize(&pb), 100);
+    }
+
+    // ── collect_files ───────────────────────────────────────
+
+    #[test]
+    fn collect_files_single_file() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("test.jpg");
+        fs::write(&path, b"fake").unwrap();
+
+        let files = collect_files(&path, false).unwrap();
+        assert_eq!(files, vec![path]);
+    }
+
+    #[test]
+    fn collect_files_filters_by_extension() {
+        let dir = TempDir::new().unwrap();
+        fs::write(dir.path().join("a.jpg"), b"").unwrap();
+        fs::write(dir.path().join("b.txt"), b"").unwrap();
+        fs::write(dir.path().join("c.png"), b"").unwrap();
+
+        let files = collect_files(dir.path(), false).unwrap();
+        assert_eq!(files.len(), 2);
+        assert!(files.iter().all(|f| {
+            let ext = f.extension().unwrap().to_str().unwrap();
+            ext == "jpg" || ext == "png"
+        }));
+    }
+
+    #[test]
+    fn collect_files_recursive() {
+        let dir = TempDir::new().unwrap();
+        fs::write(dir.path().join("a.jpg"), b"").unwrap();
+        let sub = dir.path().join("sub");
+        fs::create_dir(&sub).unwrap();
+        fs::write(sub.join("b.png"), b"").unwrap();
+
+        let non_recursive = collect_files(dir.path(), false).unwrap();
+        assert_eq!(non_recursive.len(), 1);
+
+        let recursive = collect_files(dir.path(), true).unwrap();
+        assert_eq!(recursive.len(), 2);
+    }
 }

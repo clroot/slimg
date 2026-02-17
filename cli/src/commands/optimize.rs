@@ -4,7 +4,7 @@ use clap::Args;
 use rayon::prelude::*;
 use slimg_core::{optimize, output_path};
 
-use super::{collect_files, configure_thread_pool, make_progress_bar};
+use super::{ErrorCollector, collect_files, configure_thread_pool, make_progress_bar, safe_write};
 
 #[derive(Debug, Args)]
 pub struct OptimizeArgs {
@@ -42,10 +42,10 @@ pub fn run(args: OptimizeArgs) -> anyhow::Result<()> {
     configure_thread_pool(args.jobs)?;
 
     let pb = make_progress_bar(files.len());
+    let errors = ErrorCollector::new();
 
-    files
-        .par_iter()
-        .try_for_each(|file| -> anyhow::Result<()> {
+    files.par_iter().for_each(|file| {
+        let result: anyhow::Result<()> = (|| {
             let original_data = std::fs::read(file)?;
             let original_size = original_data.len() as u64;
 
@@ -59,10 +59,7 @@ pub fn run(args: OptimizeArgs) -> anyhow::Result<()> {
             };
 
             if new_size < original_size || args.overwrite {
-                if let Some(parent) = out.parent() {
-                    std::fs::create_dir_all(parent)?;
-                }
-                result.save(&out)?;
+                safe_write(&out, &result.data, args.overwrite)?;
 
                 let ratio = if original_size > 0 {
                     (new_size as f64 / original_size as f64) * 100.0
@@ -87,12 +84,21 @@ pub fn run(args: OptimizeArgs) -> anyhow::Result<()> {
                 ));
             }
 
-            pb.inc(1);
-
             Ok(())
-        })?;
+        })();
 
+        if let Err(e) = result {
+            errors.push(file, &e);
+        }
+        pb.inc(1);
+    });
+
+    let fail_count = errors.summarize(&pb);
     pb.finish_and_clear();
+
+    if fail_count > 0 {
+        anyhow::bail!("{fail_count} file(s) failed to optimize");
+    }
 
     Ok(())
 }
