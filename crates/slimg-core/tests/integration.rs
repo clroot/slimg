@@ -76,8 +76,8 @@ fn roundtrip_all_encodable_formats() {
 
     let mut formats = vec![Format::Jpeg, Format::Png, Format::WebP, Format::Qoi];
 
-    // AVIF decoding is only available on non-Windows (requires dav1d)
-    #[cfg(not(target_os = "windows"))]
+    // AVIF decoding is only available on macOS (requires dav1d >= 1.3.0, only Homebrew provides it)
+    #[cfg(target_os = "macos")]
     formats.push(Format::Avif);
 
     for fmt in formats {

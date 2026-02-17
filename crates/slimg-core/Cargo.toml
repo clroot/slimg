@@ -16,5 +16,5 @@ rgb = "0.8"
 thiserror = "2"
 webp = { version = "0.3", default-features = false }
 
-[target.'cfg(not(windows))'.dependencies]
+[target.'cfg(target_os = "macos")'.dependencies]
 image = { version = "0.25", features = ["avif-native"] }

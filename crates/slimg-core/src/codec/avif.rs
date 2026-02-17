@@ -15,7 +15,7 @@ impl Codec for AvifCodec {
     }
 
     fn decode(&self, data: &[u8]) -> Result<ImageData> {
-        #[cfg(not(target_os = "windows"))]
+        #[cfg(target_os = "macos")]
         {
             let img = image::load_from_memory_with_format(data, image::ImageFormat::Avif)
                 .map_err(|e| Error::Decode(format!("avif decode: {e}")))?;
@@ -27,11 +27,11 @@ impl Codec for AvifCodec {
             Ok(ImageData::new(width, height, rgba.into_raw()))
         }
 
-        #[cfg(target_os = "windows")]
+        #[cfg(not(target_os = "macos"))]
         {
             let _ = data;
             Err(Error::Decode(
-                "AVIF decoding is not supported on Windows. Use AVIF as an output format instead."
+                "AVIF decoding is only supported on macOS. Use AVIF as an output format instead."
                     .to_string(),
             ))
         }
@@ -97,7 +97,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "macos")]
     fn encode_and_decode_roundtrip() {
         let codec = AvifCodec;
         let original = create_test_image(64, 48);

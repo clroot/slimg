@@ -127,6 +127,10 @@ jobs:
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
             echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           fi
+      - name: "Add NASM to PATH (Windows)"
+        if: "runner.os == 'Windows'"
+        run: "echo C:/Program Files/NASM >> $GITHUB_PATH"
+        shell: "bash"
       - name: Install dist
         run: ${{ matrix.install_dist.run }}
       # Get the dist-manifest
