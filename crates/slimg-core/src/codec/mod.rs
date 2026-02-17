@@ -1,3 +1,4 @@
+pub mod avif;
 pub mod jpeg;
 pub mod png;
 pub mod webp;
@@ -76,6 +77,7 @@ pub fn get_codec(format: Format) -> Box<dyn Codec> {
         Format::Jpeg => Box::new(jpeg::JpegCodec),
         Format::Png => Box::new(png::PngCodec),
         Format::WebP => Box::new(webp::WebPCodec),
+        Format::Avif => Box::new(avif::AvifCodec),
         _ => unimplemented!("codec for {format:?}"),
     }
 }

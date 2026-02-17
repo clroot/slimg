@@ -6,8 +6,11 @@ license = "MIT OR Apache-2.0"
 description = "Image optimization library — encode, decode, convert, resize"
 
 [dependencies]
-image = "0.25"
+image = { version = "0.25", features = ["avif-native"] }
 mozjpeg = "0.10"
 oxipng = { version = "10", default-features = false, features = ["parallel", "zopfli"] }
+imgref = "1"
+ravif = "0.13"
+rgb = "0.8"
 thiserror = "2"
 webp = { version = "0.3", default-features = false }
