@@ -126,6 +126,12 @@ slimg convert ./images --format webp --recursive --jobs 4
 
 See [docs/benchmarks.md](./docs/benchmarks.md) for detailed performance measurements across all codecs and pipeline operations.
 
+## Language Bindings
+
+| Language | Package | Platforms |
+|----------|---------|-----------|
+| [Kotlin/JVM](./bindings/kotlin/) | `io.clroot.slimg:slimg-kotlin` | macOS, Linux, Windows |
+
 ## Library
 
 The core functionality is available as a library crate (`slimg-core`):

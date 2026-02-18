@@ -126,6 +126,12 @@ slimg convert ./images --format webp --recursive --jobs 4
 
 모든 코덱과 파이프라인 연산의 상세 성능 측정 결과는 [docs/benchmarks.md](./docs/benchmarks.md)를 참고하세요.
 
+## 언어 바인딩
+
+| 언어 | 패키지 | 플랫폼 |
+|------|--------|--------|
+| [Kotlin/JVM](./bindings/kotlin/) | `io.clroot.slimg:slimg-kotlin` | macOS, Linux, Windows |
+
 ## 라이브러리
 
 핵심 기능은 라이브러리 크레이트(`slimg-core`)로도 사용 가능합니다:
