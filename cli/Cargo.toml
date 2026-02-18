@@ -3,12 +3,15 @@ name = "slimg"
 version = "0.1.3"
 edition = "2024"
 license = "MIT OR Apache-2.0"
-description = "Image optimization CLI — convert, optimize, resize"
+description = "Image optimization CLI — convert, compress, and resize images using MozJPEG, OxiPNG, WebP, AVIF, and QOI"
 repository = "https://github.com/clroot/slimg"
 homepage = "https://github.com/clroot/slimg"
+readme = "../README.md"
+keywords = ["image", "optimization", "cli", "compression", "webp"]
+categories = ["multimedia::images", "command-line-utilities"]
 
 [dependencies]
-slimg-core = { path = "../crates/slimg-core" }
+slimg-core = { version = "0.1.3", path = "../crates/slimg-core" }
 clap = { version = "4.5", features = ["derive"] }
 clap_complete = "4.5"
 anyhow = "1"

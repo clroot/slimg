@@ -3,7 +3,12 @@ name = "slimg-core"
 version = "0.1.3"
 edition = "2024"
 license = "MIT OR Apache-2.0"
-description = "Image optimization library — encode, decode, convert, resize"
+description = "Image optimization library — encode, decode, convert, resize with MozJPEG, OxiPNG, WebP, AVIF, and QOI"
+repository = "https://github.com/clroot/slimg"
+homepage = "https://github.com/clroot/slimg"
+readme = "README.md"
+keywords = ["image", "optimization", "compression", "webp", "avif"]
+categories = ["multimedia::images", "encoding"]
 
 [dependencies]
 image = { version = "0.25", features = ["avif-native"] }

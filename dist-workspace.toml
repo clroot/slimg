@@ -15,8 +15,8 @@ targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-apple-da
 hosting = "github"
 # Homebrew tap repository
 tap = "clroot/homebrew-tap"
-# Publish Homebrew formula on release
-publish-jobs = ["homebrew"]
+# Publishing is handled by publish.yml workflow
+publish-jobs = []
 # Custom build setup for CI (e.g. add NASM to PATH on Windows)
 github-build-setup = "../ci/build-setup.yml"
 
