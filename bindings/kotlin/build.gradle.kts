@@ -21,6 +21,14 @@ kotlin {
 
 tasks.test {
     useJUnitPlatform()
+
+    // Point JNA to the Cargo build output so tests can load libslimg_ffi
+    val cargoTargetDir = rootProject.projectDir.resolve("../../target")
+    val libPaths = listOf(
+        cargoTargetDir.resolve("debug"),
+        cargoTargetDir.resolve("release"),
+    ).joinToString(File.pathSeparator) { it.absolutePath }
+    systemProperty("jna.library.path", libPaths)
 }
 
 mavenPublishing {
