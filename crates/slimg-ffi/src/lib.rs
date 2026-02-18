@@ -67,6 +67,28 @@ impl ResizeMode {
     }
 }
 
+/// How to crop an image.
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum CropMode {
+    /// Extract a specific region.
+    Region { x: u32, y: u32, width: u32, height: u32 },
+    /// Crop to an aspect ratio (centered).
+    AspectRatio { width: u32, height: u32 },
+}
+
+impl CropMode {
+    fn to_core(&self) -> slimg_core::CropMode {
+        match self {
+            CropMode::Region { x, y, width, height } => slimg_core::CropMode::Region {
+                x: *x, y: *y, width: *width, height: *height,
+            },
+            CropMode::AspectRatio { width, height } => slimg_core::CropMode::AspectRatio {
+                width: *width, height: *height,
+            },
+        }
+    }
+}
+
 /// Decoded image data in RGBA format (4 bytes per pixel).
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct ImageData {
@@ -98,6 +120,8 @@ pub struct PipelineOptions {
     pub quality: u8,
     /// Optional resize to apply before encoding.
     pub resize: Option<ResizeMode>,
+    /// Optional crop to apply before encoding.
+    pub crop: Option<CropMode>,
 }
 
 /// Result of a pipeline conversion.
@@ -226,13 +250,20 @@ fn convert(image: &ImageData, options: &PipelineOptions) -> Result<PipelineResul
         format: options.format.to_core(),
         quality: options.quality,
         resize: options.resize.as_ref().map(|r| r.to_core()),
-        crop: None,
+        crop: options.crop.as_ref().map(|c| c.to_core()),
     };
     let result = slimg_core::convert(&image.to_core(), &core_options)?;
     Ok(PipelineResult {
         data: result.data,
         format: Format::from_core(result.format),
     })
+}
+
+/// Crop an image according to the given mode.
+#[uniffi::export]
+fn crop(image: &ImageData, mode: &CropMode) -> Result<ImageData, SlimgError> {
+    let result = slimg_core::crop::crop(&image.to_core(), &mode.to_core())?;
+    Ok(ImageData::from_core(result))
 }
 
 /// Decode the data and re-encode in the same format at the given quality.
