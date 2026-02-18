@@ -105,3 +105,39 @@ fn roundtrip_all_encodable_formats() {
         assert_eq!(decoded.height, 80, "{fmt:?}: height mismatch");
     }
 }
+
+#[test]
+fn convert_with_crop_region() {
+    let image = create_test_image(); // 100x80
+
+    let options = PipelineOptions {
+        format: Format::Png,
+        quality: 80,
+        resize: None,
+        crop: Some(CropMode::Region { x: 10, y: 10, width: 50, height: 40 }),
+    };
+    let result = convert(&image, &options).expect("PNG encode with crop failed");
+    assert!(!result.data.is_empty());
+
+    let (decoded, _) = decode(&result.data).expect("PNG decode failed");
+    assert_eq!(decoded.width, 50);
+    assert_eq!(decoded.height, 40);
+}
+
+#[test]
+fn convert_with_crop_aspect_ratio() {
+    let image = create_test_image(); // 100x80
+
+    let options = PipelineOptions {
+        format: Format::WebP,
+        quality: 80,
+        resize: None,
+        crop: Some(CropMode::AspectRatio { width: 1, height: 1 }),
+    };
+    let result = convert(&image, &options).expect("WebP encode with crop failed");
+    assert!(!result.data.is_empty());
+
+    let (decoded, _) = decode(&result.data).expect("WebP decode failed");
+    assert_eq!(decoded.width, 80);
+    assert_eq!(decoded.height, 80);
+}
