@@ -96,10 +96,12 @@ jobs:
         shell: bash
         run: echo "C:/Program Files/NASM" >> $GITHUB_PATH
 
-      - name: Install NASM (Windows)
+      - name: Install build tools (Windows)
         if: runner.os == 'Windows'
         shell: bash
-        run: choco install nasm meson ninja -y
+        run: |
+          choco install nasm ninja -y
+          pip install meson
 
       - name: Build with cargo
         if: ${{ !matrix.cross }}

@@ -33,5 +33,4 @@ ninja-build = '*'
 
 [dist.dependencies.chocolatey]
 nasm = '*'
-meson = '*'
 ninja = '*'
