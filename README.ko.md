@@ -95,6 +95,7 @@ slimg convert ./images --format webp --output ./output --recursive --jobs 4
 | 언어 | 패키지 | 플랫폼 |
 |------|--------|--------|
 | [Kotlin/JVM](./bindings/kotlin/) | `io.clroot.slimg:slimg-kotlin` | macOS, Linux, Windows |
+| [Python](./bindings/python/) | `slimg` | macOS, Linux, Windows |
 
 ## 라이브러리
 

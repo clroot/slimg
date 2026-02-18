@@ -96,6 +96,7 @@ See [docs/benchmarks.md](./docs/benchmarks.md) for detailed performance measurem
 | Language | Package | Platforms |
 |----------|---------|-----------|
 | [Kotlin/JVM](./bindings/kotlin/) | `io.clroot.slimg:slimg-kotlin` | macOS, Linux, Windows |
+| [Python](./bindings/python/) | `slimg` | macOS, Linux, Windows |
 
 ## Library
 

@@ -317,3 +317,20 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
+
+  # ─────────────────────────────────────────────
+  # Publish packages (crates.io, Maven Central, PyPI, Homebrew)
+  # NOTE: This job was added manually. Re-add after `dist generate`.
+  # ─────────────────────────────────────────────
+  publish:
+    needs:
+      - plan
+      - host
+    if: ${{ always() && needs.host.result == 'success' }}
+    permissions:
+      contents: write
+      id-token: write
+    uses: ./.github/workflows/publish.yml
+    with:
+      tag: ${{ needs.plan.outputs.tag }}
+    secrets: inherit
