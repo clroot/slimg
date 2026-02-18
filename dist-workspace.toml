@@ -18,7 +18,7 @@ tap = "clroot/homebrew-tap"
 # Publish Homebrew formula on release
 publish-jobs = ["homebrew"]
 # Custom build setup for CI (e.g. add NASM to PATH on Windows)
-github-build-setup = "build-setup.yml"
+github-build-setup = "../ci/build-setup.yml"
 
 # System dependencies required for building
 [dist.dependencies.homebrew]
