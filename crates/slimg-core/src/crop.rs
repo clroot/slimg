@@ -66,6 +66,26 @@ pub fn calculate_crop_region(
     }
 }
 
+/// Crop an image according to the given mode.
+pub fn crop(image: &ImageData, mode: &CropMode) -> Result<ImageData> {
+    let (x, y, crop_w, crop_h) = calculate_crop_region(image.width, image.height, mode)?;
+
+    let bytes_per_pixel = 4usize;
+    let src_stride = image.width as usize * bytes_per_pixel;
+    let dst_stride = crop_w as usize * bytes_per_pixel;
+
+    let mut data = vec![0u8; crop_h as usize * dst_stride];
+
+    for row in 0..crop_h as usize {
+        let src_offset = (y as usize + row) * src_stride + x as usize * bytes_per_pixel;
+        let dst_offset = row * dst_stride;
+        data[dst_offset..dst_offset + dst_stride]
+            .copy_from_slice(&image.data[src_offset..src_offset + dst_stride]);
+    }
+
+    Ok(ImageData::new(crop_w, crop_h, data))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -217,5 +237,92 @@ mod tests {
             },
         );
         assert!(result.is_err());
+    }
+
+    fn create_test_image(width: u32, height: u32) -> ImageData {
+        let data = vec![128u8; (width * height * 4) as usize];
+        ImageData::new(width, height, data)
+    }
+
+    #[test]
+    fn crop_region_returns_correct_dimensions() {
+        let img = create_test_image(200, 100);
+        let result = crop(
+            &img,
+            &CropMode::Region {
+                x: 10,
+                y: 20,
+                width: 50,
+                height: 30,
+            },
+        )
+        .unwrap();
+        assert_eq!(result.width, 50);
+        assert_eq!(result.height, 30);
+        assert_eq!(result.data.len(), (50 * 30 * 4) as usize);
+    }
+
+    #[test]
+    fn crop_aspect_returns_correct_dimensions() {
+        let img = create_test_image(200, 100);
+        let result = crop(
+            &img,
+            &CropMode::AspectRatio {
+                width: 1,
+                height: 1,
+            },
+        )
+        .unwrap();
+        assert_eq!(result.width, 100);
+        assert_eq!(result.height, 100);
+    }
+
+    #[test]
+    fn crop_preserves_pixel_data() {
+        let mut data = vec![0u8; 4 * 2 * 4];
+        for y in 0..2u32 {
+            for x in 0..4u32 {
+                let i = ((y * 4 + x) * 4) as usize;
+                data[i] = x as u8;
+                data[i + 1] = y as u8;
+                data[i + 2] = 0;
+                data[i + 3] = 255;
+            }
+        }
+        let img = ImageData::new(4, 2, data);
+
+        let result = crop(
+            &img,
+            &CropMode::Region {
+                x: 1,
+                y: 0,
+                width: 2,
+                height: 1,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(result.width, 2);
+        assert_eq!(result.height, 1);
+        assert_eq!(result.data[0], 1);
+        assert_eq!(result.data[4], 2);
+    }
+
+    #[test]
+    fn crop_full_image_returns_clone() {
+        let img = create_test_image(100, 50);
+        let result = crop(
+            &img,
+            &CropMode::Region {
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 50,
+            },
+        )
+        .unwrap();
+        assert_eq!(result.width, 100);
+        assert_eq!(result.height, 50);
+        assert_eq!(result.data, img.data);
     }
 }
