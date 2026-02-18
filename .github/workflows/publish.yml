@@ -3,9 +3,15 @@ name: Publish
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v0.2.0)'
+        required: true
+        type: string
 
 env:
-  VERSION: ${{ github.event.release.tag_name }}
+  VERSION: ${{ github.event.inputs.tag || github.event.release.tag_name }}
 
 permissions:
   contents: write
