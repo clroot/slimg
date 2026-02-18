@@ -1,6 +1,6 @@
 # slimg
 
-A fast image optimization CLI. Convert, compress, resize, and crop images using modern codecs.
+A fast image optimization CLI. Convert, compress, resize, crop, and extend images using modern codecs.
 
 [한국어](./README.ko.md)
 
@@ -77,6 +77,12 @@ slimg crop photo.jpg --region 100,50,800,600
 # Crop to aspect ratio (center-anchored)
 slimg crop photo.jpg --aspect 16:9
 
+# Extend to square with padding
+slimg extend photo.jpg --aspect 1:1
+
+# Extend with transparent background
+slimg extend photo.png --aspect 1:1 --transparent
+
 # Batch processing with format conversion
 slimg convert ./images --format webp --output ./output --recursive --jobs 4
 ```
@@ -107,6 +113,8 @@ let result = convert(&image, &PipelineOptions {
     quality: 80,
     resize: None,
     crop: None,
+    extend: None,
+    fill_color: None,
 })?;
 
 // Save the result

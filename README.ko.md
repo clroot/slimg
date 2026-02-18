@@ -1,6 +1,6 @@
 # slimg
 
-빠른 이미지 최적화 CLI. 최신 코덱을 사용하여 이미지를 변환, 압축, 리사이즈, 크롭합니다.
+빠른 이미지 최적화 CLI. 최신 코덱을 사용하여 이미지를 변환, 압축, 리사이즈, 크롭, 확장합니다.
 
 [English](./README.md)
 
@@ -76,6 +76,12 @@ slimg crop photo.jpg --region 100,50,800,600
 # 비율로 크롭 (중앙 기준)
 slimg crop photo.jpg --aspect 16:9
 
+# 여백 추가로 정사각형 만들기
+slimg extend photo.jpg --aspect 1:1
+
+# 투명 배경으로 확장
+slimg extend photo.png --aspect 1:1 --transparent
+
 # 배치 처리 + 포맷 변환
 slimg convert ./images --format webp --output ./output --recursive --jobs 4
 ```
@@ -106,6 +112,8 @@ let result = convert(&image, &PipelineOptions {
     quality: 80,
     resize: None,
     crop: None,
+    extend: None,
+    fill_color: None,
 })?;
 
 // 결과 저장
