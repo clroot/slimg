@@ -1,0 +1,194 @@
+name: Kotlin Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 0.1.2)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build-native:
+    name: Build native (${{ matrix.target }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            runner: macos-latest
+            lib: libslimg_ffi.dylib
+            resource_dir: darwin-aarch64
+
+          - target: x86_64-apple-darwin
+            runner: macos-13
+            lib: libslimg_ffi.dylib
+            resource_dir: darwin-x86-64
+
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+            lib: libslimg_ffi.so
+            resource_dir: linux-x86-64
+
+          - target: aarch64-unknown-linux-gnu
+            runner: ubuntu-latest
+            lib: libslimg_ffi.so
+            resource_dir: linux-aarch64
+            cross: true
+
+          - target: x86_64-pc-windows-msvc
+            runner: windows-latest
+            lib: slimg_ffi.dll
+            resource_dir: win32-x86-64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install nasm dav1d
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux' && !matrix.cross
+        run: sudo apt-get update && sudo apt-get install -y nasm
+
+      - name: Install cross (Linux aarch64)
+        if: matrix.cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Add NASM to PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: echo "C:/Program Files/NASM" >> $GITHUB_PATH
+
+      - name: Install NASM (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: choco install nasm -y
+
+      - name: Build with cargo
+        if: ${{ !matrix.cross }}
+        run: cargo build --release -p slimg-ffi --target ${{ matrix.target }}
+
+      - name: Build with cross
+        if: ${{ matrix.cross }}
+        run: cross build --release -p slimg-ffi --target ${{ matrix.target }}
+
+      - name: Upload native library
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/${{ matrix.lib }}
+
+  generate-bindings:
+    name: Generate Kotlin bindings
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install system dependencies
+        run: brew install nasm dav1d
+
+      - name: Build slimg-ffi
+        run: cargo build --release -p slimg-ffi
+
+      - name: Generate Kotlin bindings
+        run: |
+          cargo run -p slimg-ffi --bin uniffi-bindgen generate \
+            --library target/release/libslimg_ffi.dylib \
+            --language kotlin \
+            --out-dir generated-kotlin
+
+      - name: Patch generated Kotlin for Kotlin 2.x compatibility
+        run: |
+          chmod +x bindings/scripts/patch-generated-kotlin.sh
+          bindings/scripts/patch-generated-kotlin.sh generated-kotlin/io/clroot/slimg/slimg_ffi.kt
+
+      - name: Upload generated Kotlin
+        uses: actions/upload-artifact@v4
+        with:
+          name: kotlin-bindings
+          path: generated-kotlin/
+
+  package-and-publish:
+    name: Package and publish
+    needs: [build-native, generate-bindings]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all native libraries
+        uses: actions/download-artifact@v4
+        with:
+          path: native-libs/
+
+      - name: Download generated Kotlin
+        uses: actions/download-artifact@v4
+        with:
+          name: kotlin-bindings
+          path: generated-kotlin/
+
+      - name: Arrange native libraries into resources
+        run: |
+          cp -r generated-kotlin/* bindings/kotlin/src/main/kotlin/
+
+          for target_dir in native-libs/native-*; do
+            target=$(basename "$target_dir" | sed 's/native-//')
+            case "$target" in
+              aarch64-apple-darwin)     res_dir="darwin-aarch64" ;;
+              x86_64-apple-darwin)      res_dir="darwin-x86-64" ;;
+              x86_64-unknown-linux-gnu) res_dir="linux-x86-64" ;;
+              aarch64-unknown-linux-gnu) res_dir="linux-aarch64" ;;
+              x86_64-pc-windows-msvc)   res_dir="win32-x86-64" ;;
+            esac
+            mkdir -p "bindings/kotlin/src/main/resources/$res_dir"
+            cp "$target_dir"/* "bindings/kotlin/src/main/resources/$res_dir/"
+          done
+
+          echo "=== Bundled native libraries ==="
+          find bindings/kotlin/src/main/resources -type f
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Set version
+        working-directory: bindings/kotlin
+        run: |
+          sed -i "s/^version=.*/version=${{ inputs.version }}/" gradle.properties
+
+      - name: Build and test
+        working-directory: bindings/kotlin
+        run: ./gradlew build
+
+      - name: Publish to Maven Central
+        working-directory: bindings/kotlin
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
+          GPG_SIGNING_PASSWORD: ${{ secrets.GPG_SIGNING_PASSWORD }}
+        run: ./gradlew publishMavenPublicationToOSSRHRepository
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: slimg-kotlin-${{ inputs.version }}
+          path: bindings/kotlin/build/libs/*.jar
