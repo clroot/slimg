@@ -81,7 +81,7 @@ extended = slimg.extend(image, aspect_ratio=(1, 1))
 | `Resize` | Factory: `width`, `height`, `exact`, `fit`, `scale` |
 | `Crop` | Factory: `region`, `aspect_ratio` |
 | `Extend` | Factory: `aspect_ratio`, `size` |
-| `SlimgError` | Error with subclasses: `Decode`, `Encode`, `Resize`, `Io`, `Image` |
+| `SlimgError` | Error with subclasses: `UnsupportedFormat`, `UnknownFormat`, `EncodingNotSupported`, `Decode`, `Encode`, `Resize`, `Crop`, `Extend`, `Io`, `Image` |
 
 ## Supported Platforms
 

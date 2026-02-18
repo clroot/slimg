@@ -96,6 +96,22 @@ class TestExtend:
         with pytest.raises(ValueError, match="aspect_ratio or size"):
             slimg.extend(sample_image, fill="transparent")
 
+    def test_fill_channel_out_of_range(self, sample_image):
+        with pytest.raises(ValueError, match="0-255"):
+            slimg.extend(sample_image, size=(20, 20), fill=(256, 0, 0))
+
+    def test_fill_channel_negative(self, sample_image):
+        with pytest.raises(ValueError, match="0-255"):
+            slimg.extend(sample_image, size=(20, 20), fill=(-1, 0, 0))
+
+    def test_fill_invalid_type(self, sample_image):
+        with pytest.raises(ValueError, match="Invalid fill"):
+            slimg.extend(sample_image, size=(20, 20), fill="red")
+
+    def test_fill_wrong_tuple_length(self, sample_image):
+        with pytest.raises(ValueError, match="Invalid fill"):
+            slimg.extend(sample_image, size=(20, 20), fill=(255, 0))
+
 
 class TestResize:
     def test_width(self, sample_image):

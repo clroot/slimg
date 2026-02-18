@@ -48,5 +48,21 @@ class TestOptimizeFile:
             os.unlink(path)
 
     def test_optimize_file_nonexistent_raises(self):
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(slimg.SlimgError):
             slimg.optimize_file("/nonexistent/path/image.png", quality=80)
+
+
+class TestValidation:
+    def test_optimize_quality_too_high(self, sample_image):
+        encoded = slimg.convert(sample_image, format="png", quality=80)
+        with pytest.raises(ValueError, match="quality"):
+            slimg.optimize(encoded.data, quality=101)
+
+    def test_optimize_quality_negative(self, sample_image):
+        encoded = slimg.convert(sample_image, format="png", quality=80)
+        with pytest.raises(ValueError, match="quality"):
+            slimg.optimize(encoded.data, quality=-1)
+
+    def test_optimize_file_quality_too_high(self):
+        with pytest.raises(ValueError, match="quality"):
+            slimg.optimize_file("/any/path", quality=200)

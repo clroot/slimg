@@ -64,6 +64,24 @@ class TestConvert:
         assert decoded.width == decoded.height  # square after extend
 
 
+class TestConvertValidation:
+    def test_quality_too_high(self, sample_image):
+        with pytest.raises(ValueError, match="quality"):
+            slimg.convert(sample_image, format="png", quality=101)
+
+    def test_quality_negative(self, sample_image):
+        with pytest.raises(ValueError, match="quality"):
+            slimg.convert(sample_image, format="png", quality=-1)
+
+    def test_quality_not_int(self, sample_image):
+        with pytest.raises(ValueError, match="quality"):
+            slimg.convert(sample_image, format="png", quality=80.5)
+
+    def test_unknown_format_string(self, sample_image):
+        with pytest.raises(ValueError, match="Unknown format"):
+            slimg.convert(sample_image, format="bmp", quality=80)
+
+
 class TestResultSave:
     def test_save_to_file(self, sample_image):
         result = slimg.convert(sample_image, format="png", quality=80)

@@ -57,3 +57,15 @@ class TestImage:
         assert img.width == 3
         assert img.height == 2
         assert img.format is None
+
+    def test_buffer_size_mismatch_raises(self):
+        with pytest.raises(ValueError, match="Buffer size mismatch"):
+            slimg.Image(width=4, height=4, data=bytes(10))
+
+    def test_buffer_too_large_raises(self):
+        with pytest.raises(ValueError, match="Buffer size mismatch"):
+            slimg.Image(width=2, height=2, data=bytes(100))
+
+    def test_empty_buffer_raises(self):
+        with pytest.raises(ValueError, match="Buffer size mismatch"):
+            slimg.Image(width=1, height=1, data=b"")

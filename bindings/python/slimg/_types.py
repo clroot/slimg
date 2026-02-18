@@ -142,6 +142,12 @@ class Image:
         data: bytes,
         format: Optional[Format] = None,
     ):
+        expected = width * height * 4
+        if len(data) != expected:
+            raise ValueError(
+                f"Buffer size mismatch: expected {expected} bytes "
+                f"({width}x{height} RGBA), got {len(data)}"
+            )
         self._width = width
         self._height = height
         self._data = data
@@ -272,6 +278,20 @@ class Extend:
 # Fill colour helper
 # ---------------------------------------------------------------------------
 
+def _validate_channel(value: int, name: str) -> int:
+    """Ensure a colour channel value is in 0-255."""
+    if not isinstance(value, int) or not (0 <= value <= 255):
+        raise ValueError(f"{name} must be an integer in 0-255, got {value!r}")
+    return value
+
+
+def _validate_quality(quality: int) -> int:
+    """Ensure quality is in 0-100."""
+    if not isinstance(quality, int) or not (0 <= quality <= 100):
+        raise ValueError(f"quality must be an integer in 0-100, got {quality!r}")
+    return quality
+
+
 def _resolve_fill(
     fill: Union[None, str, Tuple[int, int, int], Tuple[int, int, int, int]],
 ) -> _lowlevel.FillColor:
@@ -281,9 +301,16 @@ def _resolve_fill(
     if isinstance(fill, tuple):
         if len(fill) == 3:
             r, g, b = fill
+            _validate_channel(r, "r")
+            _validate_channel(g, "g")
+            _validate_channel(b, "b")
             return _lowlevel.FillColor.SOLID(r=r, g=g, b=b, a=255)
         if len(fill) == 4:
             r, g, b, a = fill
+            _validate_channel(r, "r")
+            _validate_channel(g, "g")
+            _validate_channel(b, "b")
+            _validate_channel(a, "a")
             return _lowlevel.FillColor.SOLID(r=r, g=g, b=b, a=a)
     raise ValueError(
         f"Invalid fill: {fill!r}. "
@@ -335,6 +362,7 @@ def convert(
     *fill* accepts ``'transparent'``, ``(r, g, b)``, or
     ``(r, g, b, a)``.  Defaults to transparent when *extend* is set.
     """
+    _validate_quality(quality)
     fmt = Format._resolve(format)
     fill_color = None
     if fill is not None or extend is not None:
@@ -419,9 +447,14 @@ def resize_image(
 
     Provide exactly one keyword argument to specify the resize mode.
 
-    Since the Rust FFI does not expose a standalone resize function,
-    this encodes to a lossless format (PNG), applies the resize via the
-    ``convert`` pipeline, and decodes the result back to raw pixels.
+    .. note::
+
+        Since the Rust FFI does not yet expose a standalone resize
+        function, this internally encodes to PNG (lossless), applies
+        the resize via the ``convert`` pipeline, and decodes back.
+        This round-trip is correct but slower than a direct resize.
+        For high-throughput use, prefer ``convert()`` with a
+        ``resize`` parameter to avoid the extra decode step.
     """
     modes = [
         (k, v)
@@ -466,12 +499,20 @@ def resize_image(
 
 def optimize(data: bytes, quality: int = 80) -> Result:
     """Re-encode *data* at the given *quality* in the same format."""
+    _validate_quality(quality)
     result = _lowlevel.optimize(data, quality)
     return Result(data=result.data, format=Format._from_lowlevel(result.format))
 
 
 def optimize_file(path: str, quality: int = 80) -> Result:
-    """Read a file from *path* and re-encode at the given *quality*."""
-    with _builtin_open(path, "rb") as f:
-        data = f.read()
+    """Read a file from *path* and re-encode at the given *quality*.
+
+    Raises ``SlimgError`` if the file cannot be read or optimised.
+    """
+    _validate_quality(quality)
+    try:
+        with _builtin_open(path, "rb") as f:
+            data = f.read()
+    except OSError as exc:
+        raise _lowlevel.SlimgError.Io(str(exc)) from exc
     return optimize(data, quality)
