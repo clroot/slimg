@@ -56,12 +56,22 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Download formula from release
+      - name: Wait for release assets and download formula
         run: |
-          gh release download "$VERSION" \
-            --repo "${{ github.repository }}" \
-            --pattern "*.rb" \
-            --dir formula/
+          echo "Waiting for .rb formula asset from release workflow..."
+          for i in $(seq 1 30); do
+            if gh release download "$VERSION" \
+              --repo "${{ github.repository }}" \
+              --pattern "*.rb" \
+              --dir formula/ 2>/dev/null; then
+              echo "Formula downloaded successfully"
+              exit 0
+            fi
+            echo "Attempt $i/30: formula not ready yet, waiting 60s..."
+            sleep 60
+          done
+          echo "::error::Timed out waiting for .rb formula asset"
+          exit 1
 
       - name: Checkout homebrew-tap
         uses: actions/checkout@v4
