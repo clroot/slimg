@@ -2,3 +2,6 @@
 package_name = "io.clroot.slimg"
 cdylib_name = "slimg_ffi"
 generate_immutable_records = true
+
+[bindings.python]
+cdylib_name = "slimg_ffi"

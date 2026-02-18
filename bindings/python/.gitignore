@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+*.so
+*.dylib
+*.pyd
+
+# maturin develop installs the native module here
+slimg/_lowlevel/
