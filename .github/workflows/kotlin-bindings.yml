@@ -1,0 +1,79 @@
+name: Kotlin Bindings
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'crates/slimg-ffi/**'
+      - 'crates/slimg-core/**'
+      - 'bindings/kotlin/**'
+  pull_request:
+    paths:
+      - 'crates/slimg-ffi/**'
+      - 'crates/slimg-core/**'
+      - 'bindings/kotlin/**'
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install nasm dav1d
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y nasm
+
+      - name: Build slimg-ffi
+        run: cargo build --release -p slimg-ffi
+
+      - name: Generate Kotlin bindings
+        run: |
+          if [[ "$OSTYPE" == darwin* ]]; then
+            LIB_EXT="dylib"
+          else
+            LIB_EXT="so"
+          fi
+          cargo run -p slimg-ffi --bin uniffi-bindgen generate \
+            --library target/release/libslimg_ffi.$LIB_EXT \
+            --language kotlin \
+            --out-dir bindings/kotlin/src/main/kotlin
+
+      - name: Copy native library
+        run: |
+          if [[ "$OSTYPE" == darwin* ]]; then
+            ARCH=$(uname -m)
+            if [[ "$ARCH" == "arm64" ]]; then
+              DIR="darwin-aarch64"
+            else
+              DIR="darwin-x86-64"
+            fi
+            mkdir -p bindings/kotlin/src/main/resources/$DIR
+            cp target/release/libslimg_ffi.dylib bindings/kotlin/src/main/resources/$DIR/
+          else
+            mkdir -p bindings/kotlin/src/main/resources/linux-x86-64
+            cp target/release/libslimg_ffi.so bindings/kotlin/src/main/resources/linux-x86-64/
+          fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run Kotlin tests
+        working-directory: bindings/kotlin
+        run: ./gradlew test
