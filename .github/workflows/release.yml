@@ -127,6 +127,9 @@ jobs:
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
             echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           fi
+      - name: "Setup MSVC environment (Windows)"
+        uses: "ilammy/msvc-dev-cmd@v1"
+        if: "runner.os == 'Windows'"
       - name: "Add NASM to PATH (Windows)"
         if: "runner.os == 'Windows'"
         run: "echo C:/Program Files/NASM >> $GITHUB_PATH"
@@ -136,6 +139,12 @@ jobs:
         run: |
           pip install meson
           choco install pkgconfiglite --yes
+        shell: "bash"
+      - name: "Force MSVC compiler for meson (Windows)"
+        if: "runner.os == 'Windows'"
+        run: |
+          echo "CC=cl" >> $GITHUB_ENV
+          echo "CXX=cl" >> $GITHUB_ENV
         shell: "bash"
       - name: "Set dav1d build-from-source flag"
         run: "echo \"SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always\" >> $GITHUB_ENV"

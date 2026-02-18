@@ -40,6 +40,10 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y nasm meson ninja-build
 
+      - name: Setup MSVC environment (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Add NASM to PATH (Windows)
         if: runner.os == 'Windows'
         shell: bash
@@ -51,6 +55,13 @@ jobs:
         run: |
           choco install nasm ninja pkgconfiglite -y
           pip install meson
+
+      - name: Force MSVC compiler for meson (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          echo "CC=cl" >> $GITHUB_ENV
+          echo "CXX=cl" >> $GITHUB_ENV
 
       - name: Build slimg-ffi
         run: cargo build --release -p slimg-ffi

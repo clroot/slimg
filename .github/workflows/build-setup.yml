@@ -1,3 +1,7 @@
+- name: Setup MSVC environment (Windows)
+  if: runner.os == 'Windows'
+  uses: ilammy/msvc-dev-cmd@v1
+
 - name: Add NASM to PATH (Windows)
   if: runner.os == 'Windows'
   shell: bash
@@ -9,6 +13,13 @@
   run: |
     pip install meson
     choco install pkgconfiglite --yes
+
+- name: Force MSVC compiler for meson (Windows)
+  if: runner.os == 'Windows'
+  shell: bash
+  run: |
+    echo "CC=cl" >> $GITHUB_ENV
+    echo "CXX=cl" >> $GITHUB_ENV
 
 - name: Set dav1d build-from-source flag
   shell: bash
