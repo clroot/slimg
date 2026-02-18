@@ -287,3 +287,109 @@ jobs:
         with:
           name: slimg-kotlin-${{ env.VERSION }}
           path: bindings/kotlin/build/libs/*.jar
+
+  # ─────────────────────────────────────────────
+  # Build Python wheels for all platforms
+  # ─────────────────────────────────────────────
+  build-python-wheels:
+    name: Build Python wheel (${{ matrix.target }})
+    runs-on: ${{ matrix.runner }}
+    env:
+      SYSTEM_DEPS_DAV1D_BUILD_INTERNAL: always
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: aarch64-apple-darwin,        runner: macos-latest }
+          - { target: x86_64-apple-darwin,         runner: macos-13 }
+          - { target: x86_64-unknown-linux-gnu,    runner: ubuntu-latest }
+          - { target: aarch64-unknown-linux-gnu,   runner: ubuntu-24.04-arm }
+          - { target: x86_64-pc-windows-msvc,      runner: windows-latest }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install nasm meson ninja
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y nasm meson ninja-build
+
+      - name: Setup MSVC environment (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Add NASM to PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: echo "C:/Program Files/NASM" >> $GITHUB_PATH
+
+      - name: Install build tools (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          choco install nasm ninja pkgconfiglite -y
+          pip install meson
+
+      - name: Force MSVC compiler for meson (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          echo "CC=cl" >> $GITHUB_ENV
+          echo "CXX=cl" >> $GITHUB_ENV
+
+      - name: Build wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist
+          working-directory: bindings/python
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-wheels-${{ matrix.target }}
+          path: bindings/python/dist/*.whl
+
+  # ─────────────────────────────────────────────
+  # Build Python source distribution
+  # ─────────────────────────────────────────────
+  build-python-sdist:
+    name: Build Python sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+          working-directory: bindings/python
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-wheels-sdist
+          path: bindings/python/dist/*.tar.gz
+
+  # ─────────────────────────────────────────────
+  # Publish Python package to PyPI
+  # ─────────────────────────────────────────────
+  publish-python:
+    name: Publish to PyPI
+    needs: [build-python-wheels, build-python-sdist]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    environment: pypi
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: python-wheels-*
+          path: dist/
+          merge-multiple: true
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
