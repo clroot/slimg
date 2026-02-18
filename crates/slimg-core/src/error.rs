@@ -20,6 +20,9 @@ pub enum Error {
     #[error("resize error: {0}")]
     Resize(String),
 
+    #[error("crop error: {0}")]
+    Crop(String),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
