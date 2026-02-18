@@ -7,11 +7,15 @@ on:
       - 'crates/slimg-ffi/**'
       - 'crates/slimg-core/**'
       - 'bindings/kotlin/**'
+      - 'bindings/scripts/**'
+      - '.github/workflows/kotlin-bindings.yml'
   pull_request:
     paths:
       - 'crates/slimg-ffi/**'
       - 'crates/slimg-core/**'
       - 'bindings/kotlin/**'
+      - 'bindings/scripts/**'
+      - '.github/workflows/kotlin-bindings.yml'
 
 jobs:
   build-and-test:
