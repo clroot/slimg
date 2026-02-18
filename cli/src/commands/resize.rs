@@ -63,6 +63,8 @@ pub fn run(args: ResizeArgs) -> anyhow::Result<()> {
         quality: args.quality,
         resize: Some(resize_mode),
         crop: None,
+        extend: None,
+        fill_color: None,
     };
 
     let result = convert(&image, &options)?;

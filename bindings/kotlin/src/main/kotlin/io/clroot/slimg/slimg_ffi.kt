@@ -637,9 +637,13 @@ internal object IntegrityCheckingUniffiLib {
     }
     external fun uniffi_slimg_ffi_checksum_func_convert(
     ): Short
+    external fun uniffi_slimg_ffi_checksum_func_crop(
+    ): Short
     external fun uniffi_slimg_ffi_checksum_func_decode(
     ): Short
     external fun uniffi_slimg_ffi_checksum_func_decode_file(
+    ): Short
+    external fun uniffi_slimg_ffi_checksum_func_extend(
     ): Short
     external fun uniffi_slimg_ffi_checksum_func_format_can_encode(
     ): Short
@@ -668,9 +672,13 @@ internal object UniffiLib {
     }
     external fun uniffi_slimg_ffi_fn_func_convert(`image`: RustBuffer.ByValue,`options`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_slimg_ffi_fn_func_crop(`image`: RustBuffer.ByValue,`mode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_slimg_ffi_fn_func_decode(`data`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_slimg_ffi_fn_func_decode_file(`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_slimg_ffi_fn_func_extend(`image`: RustBuffer.ByValue,`mode`: RustBuffer.ByValue,`fill`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_slimg_ffi_fn_func_format_can_encode(`format`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
@@ -806,10 +814,16 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_slimg_ffi_checksum_func_convert() != 14232.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_slimg_ffi_checksum_func_crop() != 14284.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_slimg_ffi_checksum_func_decode() != 62226.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_slimg_ffi_checksum_func_decode_file() != 64209.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_slimg_ffi_checksum_func_extend() != 52877.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_slimg_ffi_checksum_func_format_can_encode() != 31855.toShort()) {
@@ -1204,6 +1218,21 @@ data class PipelineOptions (
      * Optional resize to apply before encoding.
      */
     val `resize`: ResizeMode?
+    , 
+    /**
+     * Optional crop to apply before encoding.
+     */
+    val `crop`: CropMode?
+    , 
+    /**
+     * Optional extend (padding) to apply after crop and before resize.
+     */
+    val `extend`: ExtendMode?
+    , 
+    /**
+     * Fill color for the extended region (defaults to opaque white).
+     */
+    val `fillColor`: FillColor?
     
 ){
     
@@ -1223,19 +1252,28 @@ public object FfiConverterTypePipelineOptions: FfiConverterRustBuffer<PipelineOp
             FfiConverterTypeFormat.read(buf),
             FfiConverterUByte.read(buf),
             FfiConverterOptionalTypeResizeMode.read(buf),
+            FfiConverterOptionalTypeCropMode.read(buf),
+            FfiConverterOptionalTypeExtendMode.read(buf),
+            FfiConverterOptionalTypeFillColor.read(buf),
         )
     }
 
     override fun allocationSize(value: PipelineOptions) = (
             FfiConverterTypeFormat.allocationSize(value.`format`) +
             FfiConverterUByte.allocationSize(value.`quality`) +
-            FfiConverterOptionalTypeResizeMode.allocationSize(value.`resize`)
+            FfiConverterOptionalTypeResizeMode.allocationSize(value.`resize`) +
+            FfiConverterOptionalTypeCropMode.allocationSize(value.`crop`) +
+            FfiConverterOptionalTypeExtendMode.allocationSize(value.`extend`) +
+            FfiConverterOptionalTypeFillColor.allocationSize(value.`fillColor`)
     )
 
     override fun write(value: PipelineOptions, buf: ByteBuffer) {
             FfiConverterTypeFormat.write(value.`format`, buf)
             FfiConverterUByte.write(value.`quality`, buf)
             FfiConverterOptionalTypeResizeMode.write(value.`resize`, buf)
+            FfiConverterOptionalTypeCropMode.write(value.`crop`, buf)
+            FfiConverterOptionalTypeExtendMode.write(value.`extend`, buf)
+            FfiConverterOptionalTypeFillColor.write(value.`fillColor`, buf)
     }
 }
 
@@ -1285,6 +1323,308 @@ public object FfiConverterTypePipelineResult: FfiConverterRustBuffer<PipelineRes
             FfiConverterTypeFormat.write(value.`format`, buf)
     }
 }
+
+
+
+/**
+ * How to crop an image.
+ */
+sealed class CropMode {
+    
+    /**
+     * Extract a specific region.
+     */
+    data class Region(
+        val `x`: kotlin.UInt, 
+        val `y`: kotlin.UInt, 
+        val `width`: kotlin.UInt, 
+        val `height`: kotlin.UInt) : CropMode()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
+     * Crop to an aspect ratio (centered).
+     */
+    data class AspectRatio(
+        val `width`: kotlin.UInt, 
+        val `height`: kotlin.UInt) : CropMode()
+        
+    {
+        
+
+        companion object
+    }
+    
+
+    
+
+    
+    
+
+
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeCropMode : FfiConverterRustBuffer<CropMode>{
+    override fun read(buf: ByteBuffer): CropMode {
+        return when(buf.getInt()) {
+            1 -> CropMode.Region(
+                FfiConverterUInt.read(buf),
+                FfiConverterUInt.read(buf),
+                FfiConverterUInt.read(buf),
+                FfiConverterUInt.read(buf),
+                )
+            2 -> CropMode.AspectRatio(
+                FfiConverterUInt.read(buf),
+                FfiConverterUInt.read(buf),
+                )
+            else -> throw RuntimeException("invalid enum value, something is very wrong!!")
+        }
+    }
+
+    override fun allocationSize(value: CropMode) = when(value) {
+        is CropMode.Region -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterUInt.allocationSize(value.`x`)
+                + FfiConverterUInt.allocationSize(value.`y`)
+                + FfiConverterUInt.allocationSize(value.`width`)
+                + FfiConverterUInt.allocationSize(value.`height`)
+            )
+        }
+        is CropMode.AspectRatio -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterUInt.allocationSize(value.`width`)
+                + FfiConverterUInt.allocationSize(value.`height`)
+            )
+        }
+    }
+
+    override fun write(value: CropMode, buf: ByteBuffer) {
+        when(value) {
+            is CropMode.Region -> {
+                buf.putInt(1)
+                FfiConverterUInt.write(value.`x`, buf)
+                FfiConverterUInt.write(value.`y`, buf)
+                FfiConverterUInt.write(value.`width`, buf)
+                FfiConverterUInt.write(value.`height`, buf)
+                Unit
+            }
+            is CropMode.AspectRatio -> {
+                buf.putInt(2)
+                FfiConverterUInt.write(value.`width`, buf)
+                FfiConverterUInt.write(value.`height`, buf)
+                Unit
+            }
+        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+}
+
+
+
+
+
+/**
+ * How to extend (add padding to) an image.
+ */
+sealed class ExtendMode {
+    
+    /**
+     * Extend the canvas so the image fits the given aspect ratio (centered).
+     */
+    data class AspectRatio(
+        val `width`: kotlin.UInt, 
+        val `height`: kotlin.UInt) : ExtendMode()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
+     * Extend the canvas to an exact pixel size (centered).
+     */
+    data class Size(
+        val `width`: kotlin.UInt, 
+        val `height`: kotlin.UInt) : ExtendMode()
+        
+    {
+        
+
+        companion object
+    }
+    
+
+    
+
+    
+    
+
+
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeExtendMode : FfiConverterRustBuffer<ExtendMode>{
+    override fun read(buf: ByteBuffer): ExtendMode {
+        return when(buf.getInt()) {
+            1 -> ExtendMode.AspectRatio(
+                FfiConverterUInt.read(buf),
+                FfiConverterUInt.read(buf),
+                )
+            2 -> ExtendMode.Size(
+                FfiConverterUInt.read(buf),
+                FfiConverterUInt.read(buf),
+                )
+            else -> throw RuntimeException("invalid enum value, something is very wrong!!")
+        }
+    }
+
+    override fun allocationSize(value: ExtendMode) = when(value) {
+        is ExtendMode.AspectRatio -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterUInt.allocationSize(value.`width`)
+                + FfiConverterUInt.allocationSize(value.`height`)
+            )
+        }
+        is ExtendMode.Size -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterUInt.allocationSize(value.`width`)
+                + FfiConverterUInt.allocationSize(value.`height`)
+            )
+        }
+    }
+
+    override fun write(value: ExtendMode, buf: ByteBuffer) {
+        when(value) {
+            is ExtendMode.AspectRatio -> {
+                buf.putInt(1)
+                FfiConverterUInt.write(value.`width`, buf)
+                FfiConverterUInt.write(value.`height`, buf)
+                Unit
+            }
+            is ExtendMode.Size -> {
+                buf.putInt(2)
+                FfiConverterUInt.write(value.`width`, buf)
+                FfiConverterUInt.write(value.`height`, buf)
+                Unit
+            }
+        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+}
+
+
+
+
+
+/**
+ * Fill color for the extended canvas region.
+ */
+sealed class FillColor {
+    
+    /**
+     * A solid RGBA color.
+     */
+    data class Solid(
+        val `r`: kotlin.UByte, 
+        val `g`: kotlin.UByte, 
+        val `b`: kotlin.UByte, 
+        val `a`: kotlin.UByte) : FillColor()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
+     * Fully transparent (RGBA 0,0,0,0).
+     */
+    object Transparent : FillColor()
+    
+    
+
+    
+
+    
+    
+
+
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFillColor : FfiConverterRustBuffer<FillColor>{
+    override fun read(buf: ByteBuffer): FillColor {
+        return when(buf.getInt()) {
+            1 -> FillColor.Solid(
+                FfiConverterUByte.read(buf),
+                FfiConverterUByte.read(buf),
+                FfiConverterUByte.read(buf),
+                FfiConverterUByte.read(buf),
+                )
+            2 -> FillColor.Transparent
+            else -> throw RuntimeException("invalid enum value, something is very wrong!!")
+        }
+    }
+
+    override fun allocationSize(value: FillColor) = when(value) {
+        is FillColor.Solid -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterUByte.allocationSize(value.`r`)
+                + FfiConverterUByte.allocationSize(value.`g`)
+                + FfiConverterUByte.allocationSize(value.`b`)
+                + FfiConverterUByte.allocationSize(value.`a`)
+            )
+        }
+        is FillColor.Transparent -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+            )
+        }
+    }
+
+    override fun write(value: FillColor, buf: ByteBuffer) {
+        when(value) {
+            is FillColor.Solid -> {
+                buf.putInt(1)
+                FfiConverterUByte.write(value.`r`, buf)
+                FfiConverterUByte.write(value.`g`, buf)
+                FfiConverterUByte.write(value.`b`, buf)
+                FfiConverterUByte.write(value.`a`, buf)
+                Unit
+            }
+            is FillColor.Transparent -> {
+                buf.putInt(2)
+                Unit
+            }
+        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+}
+
+
 
 
 
@@ -1542,43 +1882,59 @@ sealed class SlimgException: kotlin.Exception() {
     }
     
     class Decode(
-
+        
         val `msg`: kotlin.String
         ) : SlimgException() {
         override val message
-            get() = "msg=${ `msg` }"
+            get() = "message=${ `msg` }"
     }
     
     class Encode(
-
+        
         val `msg`: kotlin.String
         ) : SlimgException() {
         override val message
-            get() = "msg=${ `msg` }"
+            get() = "message=${ `msg` }"
     }
     
     class Resize(
-
+        
         val `msg`: kotlin.String
         ) : SlimgException() {
         override val message
-            get() = "msg=${ `msg` }"
+            get() = "message=${ `msg` }"
+    }
+    
+    class Crop(
+        
+        val `msg`: kotlin.String
+        ) : SlimgException() {
+        override val message
+            get() = "message=${ `msg` }"
+    }
+    
+    class Extend(
+        
+        val `msg`: kotlin.String
+        ) : SlimgException() {
+        override val message
+            get() = "message=${ `msg` }"
     }
     
     class Io(
-
+        
         val `msg`: kotlin.String
         ) : SlimgException() {
         override val message
-            get() = "msg=${ `msg` }"
+            get() = "message=${ `msg` }"
     }
     
     class Image(
-
+        
         val `msg`: kotlin.String
         ) : SlimgException() {
         override val message
-            get() = "msg=${ `msg` }"
+            get() = "message=${ `msg` }"
     }
     
 
@@ -1618,10 +1974,16 @@ public object FfiConverterTypeSlimgError : FfiConverterRustBuffer<SlimgException
             6 -> SlimgException.Resize(
                 FfiConverterString.read(buf),
                 )
-            7 -> SlimgException.Io(
+            7 -> SlimgException.Crop(
                 FfiConverterString.read(buf),
                 )
-            8 -> SlimgException.Image(
+            8 -> SlimgException.Extend(
+                FfiConverterString.read(buf),
+                )
+            9 -> SlimgException.Io(
+                FfiConverterString.read(buf),
+                )
+            10 -> SlimgException.Image(
                 FfiConverterString.read(buf),
                 )
             else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
@@ -1648,27 +2010,37 @@ public object FfiConverterTypeSlimgError : FfiConverterRustBuffer<SlimgException
             is SlimgException.Decode -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
-                + FfiConverterString.allocationSize(value.`msg`)
+                + FfiConverterString.allocationSize(value.`message`)
             )
             is SlimgException.Encode -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
-                + FfiConverterString.allocationSize(value.`msg`)
+                + FfiConverterString.allocationSize(value.`message`)
             )
             is SlimgException.Resize -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
-                + FfiConverterString.allocationSize(value.`msg`)
+                + FfiConverterString.allocationSize(value.`message`)
+            )
+            is SlimgException.Crop -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+                + FfiConverterString.allocationSize(value.`message`)
+            )
+            is SlimgException.Extend -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+                + FfiConverterString.allocationSize(value.`message`)
             )
             is SlimgException.Io -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
-                + FfiConverterString.allocationSize(value.`msg`)
+                + FfiConverterString.allocationSize(value.`message`)
             )
             is SlimgException.Image -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
-                + FfiConverterString.allocationSize(value.`msg`)
+                + FfiConverterString.allocationSize(value.`message`)
             )
         }
     }
@@ -1692,27 +2064,37 @@ public object FfiConverterTypeSlimgError : FfiConverterRustBuffer<SlimgException
             }
             is SlimgException.Decode -> {
                 buf.putInt(4)
-                FfiConverterString.write(value.`msg`, buf)
+                FfiConverterString.write(value.`message`, buf)
                 Unit
             }
             is SlimgException.Encode -> {
                 buf.putInt(5)
-                FfiConverterString.write(value.`msg`, buf)
+                FfiConverterString.write(value.`message`, buf)
                 Unit
             }
             is SlimgException.Resize -> {
                 buf.putInt(6)
-                FfiConverterString.write(value.`msg`, buf)
+                FfiConverterString.write(value.`message`, buf)
+                Unit
+            }
+            is SlimgException.Crop -> {
+                buf.putInt(7)
+                FfiConverterString.write(value.`message`, buf)
+                Unit
+            }
+            is SlimgException.Extend -> {
+                buf.putInt(8)
+                FfiConverterString.write(value.`message`, buf)
                 Unit
             }
             is SlimgException.Io -> {
-                buf.putInt(7)
-                FfiConverterString.write(value.`msg`, buf)
+                buf.putInt(9)
+                FfiConverterString.write(value.`message`, buf)
                 Unit
             }
             is SlimgException.Image -> {
-                buf.putInt(8)
-                FfiConverterString.write(value.`msg`, buf)
+                buf.putInt(10)
+                FfiConverterString.write(value.`message`, buf)
                 Unit
             }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
@@ -1748,6 +2130,102 @@ public object FfiConverterOptionalString: FfiConverterRustBuffer<kotlin.String?>
         } else {
             buf.put(1)
             FfiConverterString.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeCropMode: FfiConverterRustBuffer<CropMode?> {
+    override fun read(buf: ByteBuffer): CropMode? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeCropMode.read(buf)
+    }
+
+    override fun allocationSize(value: CropMode?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeCropMode.allocationSize(value)
+        }
+    }
+
+    override fun write(value: CropMode?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeCropMode.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeExtendMode: FfiConverterRustBuffer<ExtendMode?> {
+    override fun read(buf: ByteBuffer): ExtendMode? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeExtendMode.read(buf)
+    }
+
+    override fun allocationSize(value: ExtendMode?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeExtendMode.allocationSize(value)
+        }
+    }
+
+    override fun write(value: ExtendMode?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeExtendMode.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeFillColor: FfiConverterRustBuffer<FillColor?> {
+    override fun read(buf: ByteBuffer): FillColor? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeFillColor.read(buf)
+    }
+
+    override fun allocationSize(value: FillColor?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeFillColor.allocationSize(value)
+        }
+    }
+
+    override fun write(value: FillColor?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeFillColor.write(value, buf)
         }
     }
 }
@@ -1830,6 +2308,20 @@ public object FfiConverterOptionalTypeResizeMode: FfiConverterRustBuffer<ResizeM
     
 
         /**
+         * Crop an image according to the given mode.
+         */
+    @Throws(SlimgException::class) fun `crop`(`image`: ImageData, `mode`: CropMode): ImageData {
+            return FfiConverterTypeImageData.lift(
+    uniffiRustCallWithError(SlimgException) { _status ->
+    UniffiLib.uniffi_slimg_ffi_fn_func_crop(
+    
+        FfiConverterTypeImageData.lower(`image`),FfiConverterTypeCropMode.lower(`mode`),_status)
+}
+    )
+    }
+    
+
+        /**
          * Detect the format from magic bytes and decode raw image data.
          */
     @Throws(SlimgException::class) fun `decode`(`data`: kotlin.ByteArray): DecodeResult {
@@ -1852,6 +2344,20 @@ public object FfiConverterOptionalTypeResizeMode: FfiConverterRustBuffer<ResizeM
     UniffiLib.uniffi_slimg_ffi_fn_func_decode_file(
     
         FfiConverterString.lower(`path`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * Extend an image by adding padding around it.
+         */
+    @Throws(SlimgException::class) fun `extend`(`image`: ImageData, `mode`: ExtendMode, `fill`: FillColor): ImageData {
+            return FfiConverterTypeImageData.lift(
+    uniffiRustCallWithError(SlimgException) { _status ->
+    UniffiLib.uniffi_slimg_ffi_fn_func_extend(
+    
+        FfiConverterTypeImageData.lower(`image`),FfiConverterTypeExtendMode.lower(`mode`),FfiConverterTypeFillColor.lower(`fill`),_status)
 }
     )
     }

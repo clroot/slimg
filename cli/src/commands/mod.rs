@@ -1,5 +1,6 @@
 pub mod convert;
 pub mod crop;
+pub mod extend;
 pub mod optimize;
 pub mod resize;
 
@@ -139,6 +140,26 @@ impl ErrorCollector {
 
         errors.len()
     }
+}
+
+/// Parse "WxH" size string (e.g. "1920x1080").
+pub(crate) fn parse_size(s: &str) -> std::result::Result<(u32, u32), String> {
+    let parts: Vec<&str> = s.split('x').collect();
+    if parts.len() != 2 {
+        return Err("expected format: WIDTHxHEIGHT (e.g. 1920x1080)".to_string());
+    }
+    let w: u32 = parts[0]
+        .trim()
+        .parse()
+        .map_err(|_| format!("invalid width: '{}'", parts[0]))?;
+    let h: u32 = parts[1]
+        .trim()
+        .parse()
+        .map_err(|_| format!("invalid height: '{}'", parts[1]))?;
+    if w == 0 || h == 0 {
+        return Err("size values must be non-zero".to_string());
+    }
+    Ok((w, h))
 }
 
 fn collect_dir(dir: &Path, recursive: bool, out: &mut Vec<PathBuf>) -> anyhow::Result<()> {
@@ -319,5 +340,32 @@ mod tests {
 
         let recursive = collect_files(dir.path(), true).unwrap();
         assert_eq!(recursive.len(), 2);
+    }
+
+    // ── parse_size ────────────────────────────────────────────
+
+    #[test]
+    fn parse_size_valid() {
+        assert_eq!(parse_size("1920x1080"), Ok((1920, 1080)));
+    }
+
+    #[test]
+    fn parse_size_with_spaces() {
+        assert_eq!(parse_size("1920 x 1080"), Ok((1920, 1080)));
+    }
+
+    #[test]
+    fn parse_size_zero() {
+        assert!(parse_size("0x100").is_err());
+    }
+
+    #[test]
+    fn parse_size_wrong_format() {
+        assert!(parse_size("1920-1080").is_err());
+    }
+
+    #[test]
+    fn parse_size_invalid_number() {
+        assert!(parse_size("abcx100").is_err());
     }
 }

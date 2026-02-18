@@ -2,7 +2,7 @@
 
 [English](./usage.md)
 
-slimg은 **convert**, **optimize**, **resize**, **crop** 네 가지 명령어를 제공합니다.
+slimg은 **convert**, **optimize**, **resize**, **crop**, **extend** 다섯 가지 명령어를 제공합니다.
 
 ## convert
 
@@ -150,6 +150,51 @@ slimg crop photo.jpg --region 0,0,500,500 --format webp
 slimg crop ./images --aspect 16:9 --output ./cropped --recursive
 ```
 
+## extend
+
+이미지에 여백을 추가하여 목표 비율이나 크기로 확장합니다. 원본 이미지는 새 캔버스의 중앙에 배치됩니다.
+
+```
+slimg extend photo.jpg --aspect 1:1
+```
+
+| 옵션 | 설명 |
+|------|------|
+| `--aspect` | 목표 비율: `너비:높이` (예: `1:1`, `16:9`) |
+| `--size` | 목표 캔버스 크기: `너비x높이` (예: `1920x1080`) |
+| `--color` | 여백 색상 (hex, 예: `'#FF0000'`, `'000000'`). 기본값: 흰색 |
+| `--transparent` | 투명 배경 사용 (PNG, WebP 등) |
+| `--format`, `-f` | 다른 포맷으로 변환 |
+| `--quality`, `-q` | 인코딩 품질 0-100 (기본값: 80) |
+| `--output`, `-o` | 출력 경로 (파일 또는 디렉토리) |
+| `--recursive` | 하위 디렉토리 포함 처리 |
+| `--jobs`, `-j` | 병렬 작업 수 (기본값: 전체 코어) |
+| `--overwrite` | 기존 파일 덮어쓰기 |
+
+`--aspect`와 `--size`는 동시에 사용할 수 없습니다. 둘 중 하나는 필수입니다.
+`--color`와 `--transparent`는 동시에 사용할 수 없습니다.
+
+**참고:** `--size` 사용 시 목표 크기는 원본 이미지 크기 이상이어야 합니다. JPEG 출력에 `--transparent`를 사용하면 경고와 함께 흰색 배경으로 대체됩니다 (JPEG는 투명도를 지원하지 않음).
+
+**예시:**
+
+```bash
+# 정사각형(1:1)으로 확장 (흰색 여백)
+slimg extend photo.jpg --aspect 1:1
+
+# 16:9 비율로 확장 (검정 여백)
+slimg extend photo.jpg --aspect 16:9 --color '#000000'
+
+# 정확한 크기로 확장 (투명 배경, PNG)
+slimg extend photo.png --size 1920x1080 --transparent
+
+# 확장 + 포맷 변환
+slimg extend photo.jpg --aspect 1:1 --transparent --format png
+
+# 디렉토리 내 모든 이미지 일괄 확장
+slimg extend ./images --aspect 1:1 --output ./squared --recursive
+```
+
 ## 배치 처리
 
 `--recursive` 옵션으로 디렉토리를 처리할 때, slimg은 [rayon](https://github.com/rayon-rs/rayon)을 통해 모든 CPU 코어를 활용합니다. `--jobs` 옵션으로 병렬 수를 제한할 수 있습니다.
@@ -173,12 +218,14 @@ use slimg_core::*;
 // 이미지 파일 디코딩
 let (image, format) = decode_file(Path::new("photo.jpg"))?;
 
-// WebP로 변환 + 크롭
+// WebP로 변환 + 확장 (여백 추가로 1:1 비율 만들기)
 let result = convert(&image, &PipelineOptions {
     format: Format::WebP,
     quality: 80,
     resize: None,
-    crop: Some(CropMode::AspectRatio { width: 16, height: 9 }),
+    crop: None,
+    extend: Some(ExtendMode::AspectRatio { width: 1, height: 1 }),
+    fill_color: Some(FillColor::Solid([255, 255, 255, 255])),
 })?;
 
 // 결과 저장

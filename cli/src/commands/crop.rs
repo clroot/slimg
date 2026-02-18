@@ -64,7 +64,7 @@ fn parse_region(s: &str) -> Result<(u32, u32, u32, u32), String> {
     Ok((nums[0], nums[1], nums[2], nums[3]))
 }
 
-fn parse_aspect(s: &str) -> Result<(u32, u32), String> {
+pub(crate) fn parse_aspect(s: &str) -> Result<(u32, u32), String> {
     let parts: Vec<&str> = s.split(':').collect();
     if parts.len() != 2 {
         return Err("expected format: width:height (e.g. 16:9, 1:1)".to_string());
@@ -126,6 +126,8 @@ pub fn run(args: CropArgs) -> anyhow::Result<()> {
                 quality: args.quality,
                 resize: None,
                 crop: Some(crop_mode.clone()),
+                extend: None,
+                fill_color: None,
             };
 
             let result =
