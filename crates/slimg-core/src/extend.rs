@@ -1,3 +1,4 @@
+use crate::codec::ImageData;
 use crate::error::{Error, Result};
 
 /// Fill color for the extended canvas region.
@@ -87,6 +88,38 @@ pub fn calculate_extend_region(
             Ok((width, height, off_x, off_y))
         }
     }
+}
+
+/// Extend an image by adding padding around it.
+pub fn extend(image: &ImageData, mode: &ExtendMode, fill: &FillColor) -> Result<ImageData> {
+    let (canvas_w, canvas_h, off_x, off_y) =
+        calculate_extend_region(image.width, image.height, mode)?;
+
+    // No-op: canvas matches image
+    if canvas_w == image.width && canvas_h == image.height {
+        return Ok(image.clone());
+    }
+
+    let bytes_per_pixel = 4usize;
+    let canvas_stride = canvas_w as usize * bytes_per_pixel;
+    let src_stride = image.width as usize * bytes_per_pixel;
+
+    // Fill canvas with background color
+    let fill_rgba = fill.as_rgba();
+    let mut data = vec![0u8; canvas_h as usize * canvas_stride];
+    for pixel in data.chunks_exact_mut(bytes_per_pixel) {
+        pixel.copy_from_slice(&fill_rgba);
+    }
+
+    // Copy original image rows into canvas at offset
+    for row in 0..image.height as usize {
+        let src_offset = row * src_stride;
+        let dst_offset = (off_y as usize + row) * canvas_stride + off_x as usize * bytes_per_pixel;
+        data[dst_offset..dst_offset + src_stride]
+            .copy_from_slice(&image.data[src_offset..src_offset + src_stride]);
+    }
+
+    Ok(ImageData::new(canvas_w, canvas_h, data))
 }
 
 #[cfg(test)]
@@ -259,5 +292,107 @@ mod tests {
             },
         );
         assert!(result.is_err());
+    }
+
+    // ── extend() pixel tests ──────────────────────────────────────
+
+    use crate::codec::ImageData;
+
+    fn create_test_image(width: u32, height: u32) -> ImageData {
+        let data = vec![128u8; (width * height * 4) as usize];
+        ImageData::new(width, height, data)
+    }
+
+    #[test]
+    fn extend_returns_correct_dimensions() {
+        let img = create_test_image(200, 100);
+        let result = extend(
+            &img,
+            &ExtendMode::AspectRatio {
+                width: 1,
+                height: 1,
+            },
+            &FillColor::Solid([255, 255, 255, 255]),
+        )
+        .unwrap();
+        assert_eq!(result.width, 200);
+        assert_eq!(result.height, 200);
+        assert_eq!(result.data.len(), (200 * 200 * 4) as usize);
+    }
+
+    #[test]
+    fn extend_fills_with_solid_color() {
+        let img = create_test_image(2, 2);
+        let result = extend(
+            &img,
+            &ExtendMode::Size {
+                width: 4,
+                height: 4,
+            },
+            &FillColor::Solid([255, 0, 0, 255]),
+        )
+        .unwrap();
+        // Top-left corner (0,0) should be fill color (red)
+        assert_eq!(result.data[0], 255); // R
+        assert_eq!(result.data[1], 0); // G
+        assert_eq!(result.data[2], 0); // B
+        assert_eq!(result.data[3], 255); // A
+    }
+
+    #[test]
+    fn extend_fills_with_transparent() {
+        let img = create_test_image(2, 2);
+        let result = extend(
+            &img,
+            &ExtendMode::Size {
+                width: 4,
+                height: 4,
+            },
+            &FillColor::Transparent,
+        )
+        .unwrap();
+        assert_eq!(&result.data[0..4], &[0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn extend_preserves_pixel_data() {
+        // Create 2x1 image: pixel(0,0)=[10,20,30,255] pixel(1,0)=[40,50,60,255]
+        let data = vec![10, 20, 30, 255, 40, 50, 60, 255];
+        let img = ImageData::new(2, 1, data);
+
+        // Extend to 4x3 → original centered at offset (1, 1)
+        let result = extend(
+            &img,
+            &ExtendMode::Size {
+                width: 4,
+                height: 3,
+            },
+            &FillColor::Solid([0, 0, 0, 0]),
+        )
+        .unwrap();
+
+        let stride = 4 * 4; // 4 pixels * 4 bytes
+        let offset = 1 * stride + 1 * 4; // row 1, col 1
+        assert_eq!(&result.data[offset..offset + 4], &[10, 20, 30, 255]);
+
+        let offset2 = 1 * stride + 2 * 4;
+        assert_eq!(&result.data[offset2..offset2 + 4], &[40, 50, 60, 255]);
+    }
+
+    #[test]
+    fn extend_noop_when_already_matching() {
+        let img = create_test_image(200, 100);
+        let result = extend(
+            &img,
+            &ExtendMode::AspectRatio {
+                width: 2,
+                height: 1,
+            },
+            &FillColor::Solid([255, 255, 255, 255]),
+        )
+        .unwrap();
+        assert_eq!(result.width, 200);
+        assert_eq!(result.height, 100);
+        assert_eq!(result.data, img.data);
     }
 }
