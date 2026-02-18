@@ -70,9 +70,14 @@ jobs:
       - name: Install maturin and pytest
         run: pip install maturin pytest
 
-      - name: Build and install
+      - name: Build wheel
         working-directory: bindings/python
-        run: maturin develop
+        run: maturin build --out dist
+
+      - name: Install wheel
+        working-directory: bindings/python
+        shell: bash
+        run: pip install dist/*.whl
 
       - name: Run tests
         working-directory: bindings/python
