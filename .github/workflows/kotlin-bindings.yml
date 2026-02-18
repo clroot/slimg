@@ -49,6 +49,11 @@ jobs:
             --language kotlin \
             --out-dir bindings/kotlin/src/main/kotlin
 
+      - name: Patch generated Kotlin for Kotlin 2.x compatibility
+        run: |
+          chmod +x bindings/scripts/patch-generated-kotlin.sh
+          bindings/scripts/patch-generated-kotlin.sh bindings/kotlin/src/main/kotlin/io/clroot/slimg/slimg_ffi.kt
+
       - name: Copy native library
         run: |
           if [[ "$OSTYPE" == darwin* ]]; then
