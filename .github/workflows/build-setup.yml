@@ -3,10 +3,12 @@
   shell: bash
   run: echo C:/Program Files/NASM >> $GITHUB_PATH
 
-- name: Install meson via pip (Windows)
+- name: Install meson and pkg-config (Windows)
   if: runner.os == 'Windows'
   shell: bash
-  run: pip install meson
+  run: |
+    pip install meson
+    choco install pkgconfiglite --yes
 
 - name: Set dav1d build-from-source flag
   shell: bash

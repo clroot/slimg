@@ -49,7 +49,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          choco install nasm ninja -y
+          choco install nasm ninja pkgconfiglite -y
           pip install meson
 
       - name: Build slimg-ffi
