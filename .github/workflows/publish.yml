@@ -287,3 +287,176 @@ jobs:
         with:
           name: slimg-kotlin-${{ env.VERSION }}
           path: bindings/kotlin/build/libs/*.jar
+
+  # ─────────────────────────────────────────────
+  # Build Python wheels for all platforms
+  # ─────────────────────────────────────────────
+  build-python-wheels:
+    name: Build Python wheel (${{ matrix.target }})
+    runs-on: ${{ matrix.runner }}
+    env:
+      SYSTEM_DEPS_DAV1D_BUILD_INTERNAL: always
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: aarch64-apple-darwin,        runner: macos-latest }
+          - { target: x86_64-apple-darwin,         runner: macos-13 }
+          - { target: x86_64-unknown-linux-gnu,    runner: ubuntu-latest }
+          - { target: aarch64-unknown-linux-gnu,   runner: ubuntu-24.04-arm }
+          - { target: x86_64-pc-windows-msvc,      runner: windows-latest }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install nasm meson ninja
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y nasm meson ninja-build
+
+      - name: Setup MSVC environment (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Add NASM to PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: echo "C:/Program Files/NASM" >> $GITHUB_PATH
+
+      - name: Install build tools (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          choco install nasm ninja pkgconfiglite -y
+          pip install meson
+
+      - name: Force MSVC compiler for meson (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          echo "CC=cl" >> $GITHUB_ENV
+          echo "CXX=cl" >> $GITHUB_ENV
+
+      - name: Build wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist
+          working-directory: bindings/python
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-wheels-${{ matrix.target }}
+          path: bindings/python/dist/*.whl
+
+  # ─────────────────────────────────────────────
+  # Build Python source distribution
+  # ─────────────────────────────────────────────
+  build-python-sdist:
+    name: Build Python sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+          working-directory: bindings/python
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-wheels-sdist
+          path: bindings/python/dist/*.tar.gz
+
+  # ─────────────────────────────────────────────
+  # Verify Python version matches release tag
+  # ─────────────────────────────────────────────
+  verify-python-version:
+    name: Verify Python package version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check version consistency
+        shell: bash
+        run: |
+          RELEASE_VERSION="${VERSION#v}"
+          PKG_VERSION=$(python3 -c "
+          import tomllib
+          with open('bindings/python/pyproject.toml', 'rb') as f:
+              print(tomllib.load(f)['project']['version'])
+          ")
+          if [ "$RELEASE_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Version mismatch: release tag=$RELEASE_VERSION, pyproject.toml=$PKG_VERSION"
+            exit 1
+          fi
+          echo "Version verified: $RELEASE_VERSION"
+
+  # ─────────────────────────────────────────────
+  # Smoke test built Python wheels
+  # ─────────────────────────────────────────────
+  smoke-test-python:
+    name: Smoke test Python wheel (${{ matrix.os }})
+    needs: [build-python-wheels]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: python-wheels-*
+          path: dist/
+          merge-multiple: true
+
+      - name: Install and smoke test
+        shell: bash
+        run: |
+          pip install dist/*.whl
+          python -c "
+          import slimg
+          print('Format:', slimg.Format.PNG)
+          print('Extension:', slimg.Format.PNG.extension)
+          print('Can encode:', slimg.Format.JPEG.can_encode)
+          # Create a small test image and round-trip it
+          data = bytes(4 * 4 * 4)  # 4x4 RGBA black
+          img = slimg.Image(4, 4, data)
+          result = slimg.convert(img, 'png')
+          assert len(result.data) > 0, 'PNG encode failed'
+          print('Smoke test passed!')
+          "
+
+  # ─────────────────────────────────────────────
+  # Publish Python package to PyPI
+  # ─────────────────────────────────────────────
+  publish-python:
+    name: Publish to PyPI
+    needs: [build-python-wheels, build-python-sdist, verify-python-version, smoke-test-python]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    environment: pypi
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: python-wheels-*
+          path: dist/
+          merge-multiple: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-wheels-sdist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/

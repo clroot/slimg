@@ -657,6 +657,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Short
     external fun uniffi_slimg_ffi_checksum_func_output_path(
     ): Short
+    external fun uniffi_slimg_ffi_checksum_func_resize(
+    ): Short
     external fun ffi_slimg_ffi_uniffi_contract_version(
     ): Int
 
@@ -691,6 +693,8 @@ internal object UniffiLib {
     external fun uniffi_slimg_ffi_fn_func_optimize(`data`: RustBuffer.ByValue,`quality`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_slimg_ffi_fn_func_output_path(`input`: RustBuffer.ByValue,`format`: RustBuffer.ByValue,`output`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_slimg_ffi_fn_func_resize(`image`: RustBuffer.ByValue,`mode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun ffi_slimg_ffi_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -842,6 +846,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_slimg_ffi_checksum_func_output_path() != 60410.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_slimg_ffi_checksum_func_resize() != 48866.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
 }
@@ -2437,6 +2444,20 @@ public object FfiConverterOptionalTypeResizeMode: FfiConverterRustBuffer<ResizeM
     UniffiLib.uniffi_slimg_ffi_fn_func_output_path(
     
         FfiConverterString.lower(`input`),FfiConverterTypeFormat.lower(`format`),FfiConverterOptionalString.lower(`output`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * Resize an image according to the given mode.
+         */
+    @Throws(SlimgException::class) fun `resize`(`image`: ImageData, `mode`: ResizeMode): ImageData {
+            return FfiConverterTypeImageData.lift(
+    uniffiRustCallWithError(SlimgException) { _status ->
+    UniffiLib.uniffi_slimg_ffi_fn_func_resize(
+    
+        FfiConverterTypeImageData.lower(`image`),FfiConverterTypeResizeMode.lower(`mode`),_status)
 }
     )
     }
