@@ -1,0 +1,18 @@
+[package]
+name = "slimg-ffi"
+version = "0.1.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "UniFFI bindings for slimg-core image optimization library"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+slimg-core = { path = "../slimg-core" }
+uniffi = { version = "0.31", features = ["cli"] }
+thiserror = "2"
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "uniffi-bindgen.rs"
