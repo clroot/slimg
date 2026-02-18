@@ -24,7 +24,7 @@ jobs:
       SYSTEM_DEPS_DAV1D_BUILD_INTERNAL: always
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest]
+        os: [macos-latest, ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -40,27 +40,44 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y nasm meson ninja-build
 
+      - name: Add NASM to PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: echo "C:/Program Files/NASM" >> $GITHUB_PATH
+
+      - name: Install build tools (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          choco install nasm ninja -y
+          pip install meson
+
       - name: Build slimg-ffi
         run: cargo build --release -p slimg-ffi
 
       - name: Generate Kotlin bindings
+        shell: bash
         run: |
           if [[ "$OSTYPE" == darwin* ]]; then
-            LIB_EXT="dylib"
+            LIB_PATH="target/release/libslimg_ffi.dylib"
+          elif [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]]; then
+            LIB_PATH="target/release/slimg_ffi.dll"
           else
-            LIB_EXT="so"
+            LIB_PATH="target/release/libslimg_ffi.so"
           fi
           cargo run -p slimg-ffi --bin uniffi-bindgen generate \
-            --library target/release/libslimg_ffi.$LIB_EXT \
+            --library "$LIB_PATH" \
             --language kotlin \
             --out-dir bindings/kotlin/src/main/kotlin
 
       - name: Patch generated Kotlin for Kotlin 2.x compatibility
+        shell: bash
         run: |
           chmod +x bindings/scripts/patch-generated-kotlin.sh
           bindings/scripts/patch-generated-kotlin.sh bindings/kotlin/src/main/kotlin/io/clroot/slimg/slimg_ffi.kt
 
       - name: Copy native library
+        shell: bash
         run: |
           if [[ "$OSTYPE" == darwin* ]]; then
             ARCH=$(uname -m)
@@ -71,6 +88,9 @@ jobs:
             fi
             mkdir -p bindings/kotlin/src/main/resources/$DIR
             cp target/release/libslimg_ffi.dylib bindings/kotlin/src/main/resources/$DIR/
+          elif [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]]; then
+            mkdir -p bindings/kotlin/src/main/resources/win32-x86-64
+            cp target/release/slimg_ffi.dll bindings/kotlin/src/main/resources/win32-x86-64/
           else
             mkdir -p bindings/kotlin/src/main/resources/linux-x86-64
             cp target/release/libslimg_ffi.so bindings/kotlin/src/main/resources/linux-x86-64/
