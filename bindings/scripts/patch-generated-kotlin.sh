@@ -14,7 +14,7 @@ fi
 # In SlimgException subclasses, rename constructor parameter `message` to `msg`
 # and update the corresponding message override.
 sed -i.bak -E '
-    /class (Crop|Decode|Encode|Resize|Io|Image)\(/,/\}/ {
+    /class (Crop|Decode|Encode|Extend|Resize|Io|Image)\(/,/\}/ {
         s/val `message`: kotlin\.String/val `msg`: kotlin.String/
         s/get\(\) = "message=\$\{ `message` \}"/get() = "message=${ `msg` }"/
     }
@@ -28,6 +28,7 @@ sed -i.bak -E '
     s/SlimgException\.Resize\(`message`/SlimgException.Resize(`msg`/
     s/SlimgException\.Io\(`message`/SlimgException.Io(`msg`/
     s/SlimgException\.Image\(`message`/SlimgException.Image(`msg`/
+    s/SlimgException\.Extend\(`message`/SlimgException.Extend(`msg`/
 ' "$GENERATED_FILE"
 
 rm -f "${GENERATED_FILE}.bak"

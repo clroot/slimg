@@ -174,6 +174,8 @@ slimg extend photo.jpg --aspect 1:1
 `--aspect` and `--size` are mutually exclusive. One of them is required.
 `--color` and `--transparent` are mutually exclusive.
 
+**Note:** When using `--size`, the target dimensions must be equal to or larger than the source image. When using `--transparent` with JPEG output, slimg falls back to white background with a warning (JPEG does not support transparency).
+
 **Examples:**
 
 ```bash

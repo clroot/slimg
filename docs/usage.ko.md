@@ -174,6 +174,8 @@ slimg extend photo.jpg --aspect 1:1
 `--aspect`와 `--size`는 동시에 사용할 수 없습니다. 둘 중 하나는 필수입니다.
 `--color`와 `--transparent`는 동시에 사용할 수 없습니다.
 
+**참고:** `--size` 사용 시 목표 크기는 원본 이미지 크기 이상이어야 합니다. JPEG 출력에 `--transparent`를 사용하면 경고와 함께 흰색 배경으로 대체됩니다 (JPEG는 투명도를 지원하지 않음).
+
 **예시:**
 
 ```bash

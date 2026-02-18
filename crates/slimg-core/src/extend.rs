@@ -95,6 +95,14 @@ pub fn extend(image: &ImageData, mode: &ExtendMode, fill: &FillColor) -> Result<
     let (canvas_w, canvas_h, off_x, off_y) =
         calculate_extend_region(image.width, image.height, mode)?;
 
+    let expected_size = image.width as usize * image.height as usize * 4;
+    if image.data.len() != expected_size {
+        return Err(Error::Extend(format!(
+            "invalid image data: expected {} bytes ({}x{}x4), got {}",
+            expected_size, image.width, image.height, image.data.len()
+        )));
+    }
+
     // No-op: canvas matches image
     if canvas_w == image.width && canvas_h == image.height {
         return Ok(image.clone());
@@ -105,10 +113,12 @@ pub fn extend(image: &ImageData, mode: &ExtendMode, fill: &FillColor) -> Result<
     let src_stride = image.width as usize * bytes_per_pixel;
 
     // Fill canvas with background color
-    let fill_rgba = fill.as_rgba();
     let mut data = vec![0u8; canvas_h as usize * canvas_stride];
-    for pixel in data.chunks_exact_mut(bytes_per_pixel) {
-        pixel.copy_from_slice(&fill_rgba);
+    if !matches!(fill, FillColor::Transparent) {
+        let fill_rgba = fill.as_rgba();
+        for pixel in data.chunks_exact_mut(bytes_per_pixel) {
+            pixel.copy_from_slice(&fill_rgba);
+        }
     }
 
     // Copy original image rows into canvas at offset

@@ -153,3 +153,52 @@ fn convert_with_crop_aspect_ratio() {
     assert_eq!(decoded.width, 80);
     assert_eq!(decoded.height, 80);
 }
+
+#[test]
+fn extend_aspect_ratio_jpeg() {
+    let image = create_test_image(); // 100x80
+
+    let options = PipelineOptions {
+        format: Format::Jpeg,
+        quality: 80,
+        resize: None,
+        crop: None,
+        extend: Some(ExtendMode::AspectRatio { width: 1, height: 1 }),
+        fill_color: Some(FillColor::Solid([255, 255, 255, 255])),
+    };
+
+    let result = convert(&image, &options).expect("JPEG encode with extend failed");
+    assert!(!result.data.is_empty());
+
+    // Verify the output is valid by decoding it back
+    let (decoded, _) = decode(&result.data).expect("JPEG decode failed");
+    // For a 1:1 extend, width and height should be equal (the larger dimension)
+    assert_eq!(decoded.width, decoded.height);
+    let max_dim = image.width.max(image.height);
+    assert_eq!(decoded.width, max_dim);
+}
+
+#[test]
+fn extend_size_png() {
+    let image = create_test_image(); // 100x80
+
+    let target_w = image.width + 100;
+    let target_h = image.height + 200;
+
+    let options = PipelineOptions {
+        format: Format::Png,
+        quality: 80,
+        resize: None,
+        crop: None,
+        extend: Some(ExtendMode::Size { width: target_w, height: target_h }),
+        fill_color: Some(FillColor::Transparent),
+    };
+
+    let result = convert(&image, &options).expect("PNG encode with extend failed");
+    assert!(!result.data.is_empty());
+
+    // Verify dimensions
+    let (decoded, _) = decode(&result.data).expect("PNG decode failed");
+    assert_eq!(decoded.width, target_w);
+    assert_eq!(decoded.height, target_h);
+}

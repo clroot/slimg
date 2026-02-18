@@ -11,6 +11,7 @@ use super::{
 };
 
 #[derive(Debug, Args)]
+#[command(group = clap::ArgGroup::new("mode").required(true).args(["aspect", "size"]))]
 pub struct ExtendArgs {
     /// Input file or directory
     pub input: PathBuf,
