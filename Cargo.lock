@@ -1777,7 +1777,7 @@ checksum = "b2aa850e253778c88a04c3d7323b043aeda9d3e30d5971937c1855769763678e"
 
 [[package]]
 name = "slimg"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -1790,7 +1790,7 @@ dependencies = [
 
 [[package]]
 name = "slimg-core"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "criterion",
  "image",
@@ -1806,7 +1806,7 @@ dependencies = [
 
 [[package]]
 name = "slimg-ffi"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "slimg-core",
  "thiserror",
