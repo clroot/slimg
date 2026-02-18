@@ -10,7 +10,7 @@ Supports macOS (Apple Silicon, Intel), Linux (x86_64, ARM64), and Windows (x86_6
 
 ```kotlin
 dependencies {
-    implementation("io.clroot.slimg:slimg-kotlin:0.1.2")
+    implementation("io.clroot.slimg:slimg-kotlin:0.3.1")
 }
 ```
 
@@ -18,7 +18,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'io.clroot.slimg:slimg-kotlin:0.1.2'
+    implementation 'io.clroot.slimg:slimg-kotlin:0.3.1'
 }
 ```
 
@@ -28,7 +28,7 @@ dependencies {
 <dependency>
     <groupId>io.clroot.slimg</groupId>
     <artifactId>slimg-kotlin</artifactId>
-    <version>0.1.2</version>
+    <version>0.3.1</version>
 </dependency>
 ```
 
@@ -71,6 +71,9 @@ val resized = convert(result.image, PipelineOptions(
 | `decode(data: ByteArray)` | Decode image from bytes |
 | `decodeFile(path: String)` | Decode image from file path |
 | `convert(image, options)` | Convert image to a different format |
+| `crop(image, mode)` | Crop an image by region or aspect ratio |
+| `extend(image, mode, fill)` | Extend (pad) image canvas |
+| `resize(image, mode)` | Resize an image |
 | `optimize(data: ByteArray, quality: UByte)` | Re-encode to reduce file size |
 | `outputPath(input, format, output?)` | Generate output file path |
 | `formatExtension(format)` | Get file extension for a format |
@@ -84,11 +87,14 @@ val resized = convert(result.image, PipelineOptions(
 |------|-------------|
 | `Format` | `JPEG`, `PNG`, `WEB_P`, `AVIF`, `JXL`, `QOI` |
 | `ResizeMode` | `Width`, `Height`, `Exact`, `Fit`, `Scale` |
-| `PipelineOptions` | `format`, `quality`, `resize` |
+| `CropMode` | `Region`, `AspectRatio` |
+| `ExtendMode` | `AspectRatio`, `Size` |
+| `FillColor` | `Transparent`, `Solid(r, g, b, a)` |
+| `PipelineOptions` | `format`, `quality`, `resize`, `crop`, `extend`, `fillColor` |
 | `PipelineResult` | `data` (ByteArray), `format` |
 | `DecodeResult` | `image` (ImageData), `format` |
 | `ImageData` | `width`, `height`, `data` (raw pixels) |
-| `SlimgException` | Error with subclasses: `Decode`, `Encode`, `Resize`, `Io`, `Image` |
+| `SlimgException` | Error with subclasses: `UnsupportedFormat`, `UnknownFormat`, `EncodingNotSupported`, `Decode`, `Encode`, `Resize`, `Crop`, `Extend`, `Io`, `Image` |
 
 ## Supported Platforms
 
