@@ -1542,43 +1542,43 @@ sealed class SlimgException: kotlin.Exception() {
     }
     
     class Decode(
-        
-        val `message`: kotlin.String
+
+        val `msg`: kotlin.String
         ) : SlimgException() {
         override val message
-            get() = "message=${ `message` }"
+            get() = "msg=${ `msg` }"
     }
     
     class Encode(
-        
-        val `message`: kotlin.String
+
+        val `msg`: kotlin.String
         ) : SlimgException() {
         override val message
-            get() = "message=${ `message` }"
+            get() = "msg=${ `msg` }"
     }
     
     class Resize(
-        
-        val `message`: kotlin.String
+
+        val `msg`: kotlin.String
         ) : SlimgException() {
         override val message
-            get() = "message=${ `message` }"
+            get() = "msg=${ `msg` }"
     }
     
     class Io(
-        
-        val `message`: kotlin.String
+
+        val `msg`: kotlin.String
         ) : SlimgException() {
         override val message
-            get() = "message=${ `message` }"
+            get() = "msg=${ `msg` }"
     }
     
     class Image(
-        
-        val `message`: kotlin.String
+
+        val `msg`: kotlin.String
         ) : SlimgException() {
         override val message
-            get() = "message=${ `message` }"
+            get() = "msg=${ `msg` }"
     }
     
 
@@ -1648,27 +1648,27 @@ public object FfiConverterTypeSlimgError : FfiConverterRustBuffer<SlimgException
             is SlimgException.Decode -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
-                + FfiConverterString.allocationSize(value.`message`)
+                + FfiConverterString.allocationSize(value.`msg`)
             )
             is SlimgException.Encode -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
-                + FfiConverterString.allocationSize(value.`message`)
+                + FfiConverterString.allocationSize(value.`msg`)
             )
             is SlimgException.Resize -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
-                + FfiConverterString.allocationSize(value.`message`)
+                + FfiConverterString.allocationSize(value.`msg`)
             )
             is SlimgException.Io -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
-                + FfiConverterString.allocationSize(value.`message`)
+                + FfiConverterString.allocationSize(value.`msg`)
             )
             is SlimgException.Image -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
-                + FfiConverterString.allocationSize(value.`message`)
+                + FfiConverterString.allocationSize(value.`msg`)
             )
         }
     }
@@ -1692,27 +1692,27 @@ public object FfiConverterTypeSlimgError : FfiConverterRustBuffer<SlimgException
             }
             is SlimgException.Decode -> {
                 buf.putInt(4)
-                FfiConverterString.write(value.`message`, buf)
+                FfiConverterString.write(value.`msg`, buf)
                 Unit
             }
             is SlimgException.Encode -> {
                 buf.putInt(5)
-                FfiConverterString.write(value.`message`, buf)
+                FfiConverterString.write(value.`msg`, buf)
                 Unit
             }
             is SlimgException.Resize -> {
                 buf.putInt(6)
-                FfiConverterString.write(value.`message`, buf)
+                FfiConverterString.write(value.`msg`, buf)
                 Unit
             }
             is SlimgException.Io -> {
                 buf.putInt(7)
-                FfiConverterString.write(value.`message`, buf)
+                FfiConverterString.write(value.`msg`, buf)
                 Unit
             }
             is SlimgException.Image -> {
                 buf.putInt(8)
-                FfiConverterString.write(value.`message`, buf)
+                FfiConverterString.write(value.`msg`, buf)
                 Unit
             }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }

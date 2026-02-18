@@ -1,0 +1,12 @@
+.gradle/
+build/
+*.class
+local.properties
+
+# Native libraries are built, not committed
+src/main/resources/darwin-*/
+src/main/resources/linux-*/
+src/main/resources/win32-*/
+
+# Gradle wrapper JAR is generated
+!gradle/wrapper/gradle-wrapper.jar
