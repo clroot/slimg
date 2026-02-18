@@ -17,6 +17,8 @@ hosting = "github"
 tap = "clroot/homebrew-tap"
 # Publishing is handled by publish.yml workflow
 publish-jobs = []
+# Allow manual additions to release.yml (e.g. publish workflow_call job)
+allow-dirty = ["ci"]
 # Custom build setup for CI (e.g. add NASM to PATH on Windows)
 github-build-setup = "../ci/build-setup.yml"
 
