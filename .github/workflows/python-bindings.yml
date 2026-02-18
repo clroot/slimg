@@ -1,0 +1,79 @@
+name: Python Bindings
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'crates/slimg-ffi/**'
+      - 'crates/slimg-core/**'
+      - 'bindings/python/**'
+      - '.github/workflows/python-bindings.yml'
+  pull_request:
+    paths:
+      - 'crates/slimg-ffi/**'
+      - 'crates/slimg-core/**'
+      - 'bindings/python/**'
+      - '.github/workflows/python-bindings.yml'
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    env:
+      SYSTEM_DEPS_DAV1D_BUILD_INTERNAL: always
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        python-version: ['3.9', '3.13']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install nasm meson ninja
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y nasm meson ninja-build
+
+      - name: Setup MSVC environment (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Add NASM to PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: echo "C:/Program Files/NASM" >> $GITHUB_PATH
+
+      - name: Install build tools (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          choco install nasm ninja pkgconfiglite -y
+          pip install meson
+
+      - name: Force MSVC compiler for meson (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          echo "CC=cl" >> $GITHUB_ENV
+          echo "CXX=cl" >> $GITHUB_ENV
+
+      - name: Install maturin and pytest
+        run: pip install maturin pytest
+
+      - name: Build and install
+        working-directory: bindings/python
+        run: maturin develop
+
+      - name: Run tests
+        working-directory: bindings/python
+        run: pytest tests/ -v
