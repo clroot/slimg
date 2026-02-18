@@ -66,13 +66,12 @@ jobs:
       - name: Build slimg-ffi
         run: cargo build --release -p slimg-ffi
 
-      - name: Generate Kotlin bindings
+      - name: Generate Kotlin bindings (Unix)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
           if [[ "$OSTYPE" == darwin* ]]; then
             LIB_PATH="target/release/libslimg_ffi.dylib"
-          elif [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]]; then
-            LIB_PATH="target/release/slimg_ffi.dll"
           else
             LIB_PATH="target/release/libslimg_ffi.so"
           fi
@@ -80,6 +79,10 @@ jobs:
             --library "$LIB_PATH" \
             --language kotlin \
             --out-dir bindings/kotlin/src/main/kotlin
+
+      - name: Generate Kotlin bindings (Windows)
+        if: runner.os == 'Windows'
+        run: cargo run -p slimg-ffi --bin uniffi-bindgen generate --library target/release/slimg_ffi.dll --language kotlin --out-dir bindings/kotlin/src/main/kotlin
 
       - name: Patch generated Kotlin for Kotlin 2.x compatibility
         shell: bash
