@@ -1,6 +1,6 @@
 # slimg
 
-A fast image optimization CLI. Convert, compress, and resize images using modern codecs.
+A fast image optimization CLI. Convert, compress, resize, and crop images using modern codecs.
 
 [한국어](./README.ko.md)
 
@@ -59,75 +59,27 @@ cargo install --path cli
 
 ## Usage
 
-### convert
+For the full usage guide, see [docs/usage.md](./docs/usage.md).
 
-Convert an image to a different format.
-
-```
-# Convert a JPEG to WebP at quality 80 (default)
+```bash
+# Convert format
 slimg convert photo.jpg --format webp
 
-# Convert to AVIF at quality 60
-slimg convert photo.png --format avif --quality 60
+# Optimize (re-encode in same format)
+slimg optimize photo.jpg --quality 70
 
-# Convert all images in a directory
-slimg convert ./images --format webp --output ./output --recursive
-
-# Limit to 4 parallel jobs
-slimg convert ./images --format webp --recursive --jobs 4
-```
-
-### optimize
-
-Re-encode an image in the same format to reduce file size.
-
-```
-# Optimize a JPEG at quality 80
-slimg optimize photo.jpg
-
-# Optimize in-place (overwrite original)
-slimg optimize photo.jpg --overwrite
-
-# Optimize a directory of images
-slimg optimize ./images --quality 70 --recursive
-
-# Limit to 2 parallel jobs (useful for large images)
-slimg optimize ./images --recursive --jobs 2
-```
-
-### resize
-
-Resize an image with optional format conversion.
-
-```
-# Resize by width (preserves aspect ratio)
+# Resize
 slimg resize photo.jpg --width 800
 
-# Resize by height
-slimg resize photo.jpg --height 600
+# Crop by coordinates
+slimg crop photo.jpg --region 100,50,800,600
 
-# Fit within bounds (preserves aspect ratio)
-slimg resize photo.jpg --width 800 --height 600
+# Crop to aspect ratio (center-anchored)
+slimg crop photo.jpg --aspect 16:9
 
-# Scale by factor
-slimg resize photo.jpg --scale 0.5
-
-# Resize and convert format
-slimg resize photo.jpg --width 400 --format webp --output thumb.webp
+# Batch processing with format conversion
+slimg convert ./images --format webp --output ./output --recursive --jobs 4
 ```
-
-## Batch Processing
-
-When processing directories with `--recursive`, slimg uses all available CPU cores via [rayon](https://github.com/rayon-rs/rayon). Use `--jobs` to limit parallelism (useful for large images or memory-constrained environments).
-
-```
-# Use 4 threads instead of all cores
-slimg convert ./images --format webp --recursive --jobs 4
-```
-
-**Error handling** — If a file fails to process, slimg skips it and continues with the rest. A summary of failed files is printed at the end.
-
-**Safe overwrite** — When using `--overwrite`, slimg writes to a temporary file first and renames it on success. If encoding fails, the original file is preserved.
 
 ## Benchmarks
 
@@ -154,6 +106,7 @@ let result = convert(&image, &PipelineOptions {
     format: Format::WebP,
     quality: 80,
     resize: None,
+    crop: None,
 })?;
 
 // Save the result
