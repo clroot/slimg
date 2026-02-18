@@ -1,4 +1,0 @@
-- name: Add NASM to PATH (Windows)
-  if: runner.os == 'Windows'
-  shell: bash
-  run: echo C:/Program Files/NASM >> $GITHUB_PATH

@@ -11,7 +11,7 @@ A fast image optimization CLI. Convert, compress, and resize images using modern
 | JPEG   | Yes    | Yes    | MozJPEG encoder for superior compression |
 | PNG    | Yes    | Yes    | OxiPNG optimizer with Zopfli compression |
 | WebP   | Yes    | Yes    | Lossy encoding via libwebp |
-| AVIF   | macOS only | Yes | ravif encoder; decoding requires dav1d (macOS via Homebrew) |
+| AVIF   | Yes    | Yes    | ravif encoder; dav1d decoder (statically linked) |
 | QOI    | Yes    | Yes    | Lossless, fast encode/decode |
 | JPEG XL| Yes    | No     | Decode-only (GPL license restriction) |
 
@@ -48,7 +48,8 @@ cargo install --path cli
 - Rust 1.85+ (edition 2024)
 - C compiler (cc)
 - nasm (for MozJPEG / rav1e assembly optimizations)
-- dav1d (macOS only, for AVIF decoding)
+- meson + ninja (for building dav1d AVIF decoder from source)
+- Set `SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always` to build dav1d from source
 
 ## Usage
 

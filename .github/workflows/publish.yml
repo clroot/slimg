@@ -89,6 +89,8 @@ jobs:
   build-kotlin-native:
     name: Build native (${{ matrix.target }})
     runs-on: ${{ matrix.runner }}
+    env:
+      SYSTEM_DEPS_DAV1D_BUILD_INTERNAL: always
     strategy:
       fail-fast: false
       matrix:
@@ -99,7 +101,7 @@ jobs:
             resource_dir: darwin-aarch64
 
           - target: x86_64-apple-darwin
-            runner: macos-latest
+            runner: macos-15-intel
             lib: libslimg_ffi.dylib
             resource_dir: darwin-x86-64
 
@@ -109,10 +111,9 @@ jobs:
             resource_dir: linux-x86-64
 
           - target: aarch64-unknown-linux-gnu
-            runner: ubuntu-latest
+            runner: ubuntu-24.04-arm
             lib: libslimg_ffi.so
             resource_dir: linux-aarch64
-            cross: true
 
           - target: x86_64-pc-windows-msvc
             runner: windows-latest
@@ -124,53 +125,46 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
 
-      - name: Install system dependencies (macOS native)
-        if: runner.os == 'macOS' && matrix.target == 'aarch64-apple-darwin'
-        run: brew install nasm dav1d
-
-      - name: Install system dependencies (macOS x86_64 cross)
-        if: matrix.target == 'x86_64-apple-darwin'
-        run: |
-          arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          arch -x86_64 /usr/local/bin/brew install nasm dav1d
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install nasm meson ninja
 
       - name: Install system dependencies (Linux)
-        if: runner.os == 'Linux' && !matrix.cross
-        run: sudo apt-get update && sudo apt-get install -y nasm
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y nasm meson ninja-build
 
-      - name: Install cross (Linux aarch64)
-        if: matrix.cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
+      - name: Setup MSVC environment (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Add NASM to PATH (Windows)
         if: runner.os == 'Windows'
         shell: bash
         run: echo "C:/Program Files/NASM" >> $GITHUB_PATH
 
-      - name: Install NASM (Windows)
+      - name: Install build tools (Windows)
         if: runner.os == 'Windows'
         shell: bash
-        run: choco install nasm -y
+        run: |
+          choco install nasm ninja pkgconfiglite -y
+          pip install meson
 
-      - name: Build with cargo
-        if: ${{ !matrix.cross }}
-        env:
-          PKG_CONFIG_PATH: ${{ matrix.target == 'x86_64-apple-darwin' && '/usr/local/lib/pkgconfig' || '' }}
-          PKG_CONFIG_ALLOW_CROSS: ${{ matrix.target == 'x86_64-apple-darwin' && '1' || '' }}
-        run: cargo build --release -p slimg-ffi --target ${{ matrix.target }}
+      - name: Force MSVC compiler for meson (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          echo "CC=cl" >> $GITHUB_ENV
+          echo "CXX=cl" >> $GITHUB_ENV
 
-      - name: Build with cross
-        if: ${{ matrix.cross }}
-        run: cross build --release -p slimg-ffi --target ${{ matrix.target }}
+      - name: Build
+        run: cargo build --release -p slimg-ffi
 
       - name: Upload native library
         uses: actions/upload-artifact@v4
         with:
           name: native-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/${{ matrix.lib }}
+          path: target/release/${{ matrix.lib }}
 
   # ─────────────────────────────────────────────
   # Generate Kotlin bindings via UniFFI
@@ -178,6 +172,8 @@ jobs:
   generate-kotlin-bindings:
     name: Generate Kotlin bindings
     runs-on: macos-latest
+    env:
+      SYSTEM_DEPS_DAV1D_BUILD_INTERNAL: always
     steps:
       - uses: actions/checkout@v4
 
@@ -185,7 +181,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install system dependencies
-        run: brew install nasm dav1d
+        run: brew install nasm meson ninja
 
       - name: Build slimg-ffi
         run: cargo build --release -p slimg-ffi

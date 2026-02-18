@@ -18,15 +18,19 @@ tap = "clroot/homebrew-tap"
 # Publishing is handled by publish.yml workflow
 publish-jobs = []
 # Custom build setup for CI (e.g. add NASM to PATH on Windows)
-github-build-setup = "build-setup.yml"
+github-build-setup = "../ci/build-setup.yml"
 
 # System dependencies required for building
 [dist.dependencies.homebrew]
 nasm = { stage = ["build"] }
-dav1d = { stage = ["build", "run"] }
+meson = { stage = ["build"] }
+ninja = { stage = ["build"] }
 
 [dist.dependencies.apt]
 nasm = '*'
+meson = '*'
+ninja-build = '*'
 
 [dist.dependencies.chocolatey]
 nasm = '*'
+ninja = '*'
