@@ -88,6 +88,7 @@ jobs:
 
           FORMULA_VERSION="${VERSION#v}"
           git add Formula/
+          git diff --cached --quiet && echo "Formula already up to date" && exit 0
           git commit -m "slimg ${FORMULA_VERSION}"
           git push
 
