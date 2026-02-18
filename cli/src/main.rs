@@ -20,6 +20,8 @@ enum Commands {
     Optimize(commands::optimize::OptimizeArgs),
     /// Resize image with optional format conversion
     Resize(commands::resize::ResizeArgs),
+    /// Crop image with optional format conversion
+    Crop(commands::crop::CropArgs),
     /// Generate shell completions
     Completions {
         /// Shell to generate completions for
@@ -34,6 +36,7 @@ fn main() -> anyhow::Result<()> {
         Commands::Convert(args) => commands::convert::run(args),
         Commands::Optimize(args) => commands::optimize::run(args),
         Commands::Resize(args) => commands::resize::run(args),
+        Commands::Crop(args) => commands::crop::run(args),
         Commands::Completions { shell } => {
             clap_complete::generate(shell, &mut Cli::command(), "slimg", &mut io::stdout());
             Ok(())
