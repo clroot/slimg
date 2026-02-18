@@ -6,11 +6,13 @@ Supports macOS (Apple Silicon, Intel), Linux (x86_64, ARM64), and Windows (x86_6
 
 ## Installation
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.clroot.slimg/slimg-kotlin)](https://central.sonatype.com/artifact/io.clroot.slimg/slimg-kotlin)
+
 ### Gradle (Kotlin DSL)
 
 ```kotlin
 dependencies {
-    implementation("io.clroot.slimg:slimg-kotlin:0.3.1")
+    implementation("io.clroot.slimg:slimg-kotlin:$slimgVersion")
 }
 ```
 
@@ -18,7 +20,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'io.clroot.slimg:slimg-kotlin:0.3.1'
+    implementation 'io.clroot.slimg:slimg-kotlin:$slimgVersion'
 }
 ```
 
@@ -28,7 +30,7 @@ dependencies {
 <dependency>
     <groupId>io.clroot.slimg</groupId>
     <artifactId>slimg-kotlin</artifactId>
-    <version>0.3.1</version>
+    <version>${slimgVersion}</version>
 </dependency>
 ```
 
