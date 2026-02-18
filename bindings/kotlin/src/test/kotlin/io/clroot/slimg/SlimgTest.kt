@@ -234,6 +234,55 @@ class SlimgTest {
         }
     }
 
+    // ── Resize Tests ────────────────────────────────────
+
+    @Test
+    fun `resize by width preserves aspect ratio`() {
+        val image = createTestImage(10u, 8u)
+        val result = resize(image, ResizeMode.Width(5u))
+        assertEquals(5u, result.width)
+        assertEquals(4u, result.height) // 10:8 → 5:4
+    }
+
+    @Test
+    fun `resize by height preserves aspect ratio`() {
+        val image = createTestImage(10u, 8u)
+        val result = resize(image, ResizeMode.Height(4u))
+        assertEquals(5u, result.width)
+        assertEquals(4u, result.height)
+    }
+
+    @Test
+    fun `resize exact allows non-proportional`() {
+        val image = createTestImage(10u, 8u)
+        val result = resize(image, ResizeMode.Exact(20u, 20u))
+        assertEquals(20u, result.width)
+        assertEquals(20u, result.height)
+    }
+
+    @Test
+    fun `resize fit stays within bounds`() {
+        val image = createTestImage(10u, 8u)
+        val result = resize(image, ResizeMode.Fit(5u, 5u))
+        assertTrue(result.width <= 5u)
+        assertTrue(result.height <= 5u)
+    }
+
+    @Test
+    fun `resize scale doubles dimensions`() {
+        val image = createTestImage(10u, 8u)
+        val result = resize(image, ResizeMode.Scale(2.0))
+        assertEquals(20u, result.width)
+        assertEquals(16u, result.height)
+    }
+
+    @Test
+    fun `resize produces valid RGBA data`() {
+        val image = createTestImage(10u, 8u)
+        val result = resize(image, ResizeMode.Width(5u))
+        assertEquals(result.width.toInt() * result.height.toInt() * 4, result.data.size)
+    }
+
     // ── Convert (Pipeline) Tests ────────────────────────
 
     @Test

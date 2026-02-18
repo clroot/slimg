@@ -446,15 +446,6 @@ def resize_image(
     """Resize *image*.
 
     Provide exactly one keyword argument to specify the resize mode.
-
-    .. note::
-
-        Since the Rust FFI does not yet expose a standalone resize
-        function, this internally encodes to PNG (lossless), applies
-        the resize via the ``convert`` pipeline, and decodes back.
-        This round-trip is correct but slower than a direct resize.
-        For high-throughput use, prefer ``convert()`` with a
-        ``resize`` parameter to avoid the extra decode step.
     """
     modes = [
         (k, v)
@@ -482,19 +473,8 @@ def resize_image(
     elif name == "scale":
         resize_mode = _lowlevel.ResizeMode.SCALE(factor=value)
 
-    # Use the convert pipeline to perform the resize, encoding to PNG
-    # (lossless) and decoding back to raw RGBA pixels.
-    opts = _lowlevel.PipelineOptions(
-        format=_lowlevel.Format.PNG,
-        quality=100,
-        resize=resize_mode,
-        crop=None,
-        extend=None,
-        fill_color=None,
-    )
-    pipeline_result = _lowlevel.convert(image._to_lowlevel(), opts)
-    decode_result = _lowlevel.decode(pipeline_result.data)
-    return Image._from_lowlevel(decode_result.image, image.format)
+    result = _lowlevel.resize(image._to_lowlevel(), resize_mode)
+    return Image._from_lowlevel(result, image.format)
 
 
 def optimize(data: bytes, quality: int = 80) -> Result:

@@ -325,6 +325,13 @@ fn extend(image: &ImageData, mode: &ExtendMode, fill: &FillColor) -> Result<Imag
     Ok(ImageData::from_core(result))
 }
 
+/// Resize an image according to the given mode.
+#[uniffi::export]
+fn resize(image: &ImageData, mode: &ResizeMode) -> Result<ImageData, SlimgError> {
+    let result = slimg_core::resize::resize(&image.to_core(), &mode.to_core())?;
+    Ok(ImageData::from_core(result))
+}
+
 /// Decode the data and re-encode in the same format at the given quality.
 #[uniffi::export]
 fn optimize(data: Vec<u8>, quality: u8) -> Result<PipelineResult, SlimgError> {
