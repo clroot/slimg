@@ -434,7 +434,7 @@ jobs:
       - name: Install and smoke test
         shell: bash
         run: |
-          pip install dist/*.whl
+          pip install --find-links dist/ --no-index slimg
           python -c "
           import slimg
           print('Format:', slimg.Format.PNG)
