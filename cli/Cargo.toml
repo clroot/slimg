@@ -2,7 +2,7 @@
 name = "slimg"
 version = "0.4.0"
 edition = "2024"
-license = "MIT OR Apache-2.0"
+license = "MIT"
 description = "Image optimization CLI — convert, compress, and resize images using MozJPEG, OxiPNG, WebP, AVIF, and QOI"
 repository = "https://github.com/clroot/slimg"
 homepage = "https://github.com/clroot/slimg"

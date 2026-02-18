@@ -216,4 +216,4 @@ val optimized = optimize(byteArray, 80u.toUByte())
 
 ## License
 
-MIT OR Apache-2.0
+MIT

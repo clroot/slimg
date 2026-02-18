@@ -99,4 +99,4 @@ extended = slimg.extend(image, aspect_ratio=(1, 1))
 
 ## License
 
-MIT OR Apache-2.0
+MIT

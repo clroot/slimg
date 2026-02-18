@@ -2,7 +2,7 @@
 name = "slimg-ffi"
 version = "0.4.0"
 edition = "2024"
-license = "MIT OR Apache-2.0"
+license = "MIT"
 description = "UniFFI bindings for slimg-core image optimization library"
 publish = false
 
