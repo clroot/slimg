@@ -89,6 +89,48 @@ impl CropMode {
     }
 }
 
+/// How to extend (add padding to) an image.
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum ExtendMode {
+    /// Extend the canvas so the image fits the given aspect ratio (centered).
+    AspectRatio { width: u32, height: u32 },
+    /// Extend the canvas to an exact pixel size (centered).
+    Size { width: u32, height: u32 },
+}
+
+impl ExtendMode {
+    fn to_core(&self) -> slimg_core::ExtendMode {
+        match self {
+            ExtendMode::AspectRatio { width, height } => slimg_core::ExtendMode::AspectRatio {
+                width: *width,
+                height: *height,
+            },
+            ExtendMode::Size { width, height } => slimg_core::ExtendMode::Size {
+                width: *width,
+                height: *height,
+            },
+        }
+    }
+}
+
+/// Fill color for the extended canvas region.
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum FillColor {
+    /// A solid RGBA color.
+    Solid { r: u8, g: u8, b: u8, a: u8 },
+    /// Fully transparent (RGBA 0,0,0,0).
+    Transparent,
+}
+
+impl FillColor {
+    fn to_core(&self) -> slimg_core::FillColor {
+        match self {
+            FillColor::Solid { r, g, b, a } => slimg_core::FillColor::Solid([*r, *g, *b, *a]),
+            FillColor::Transparent => slimg_core::FillColor::Transparent,
+        }
+    }
+}
+
 /// Decoded image data in RGBA format (4 bytes per pixel).
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct ImageData {
@@ -122,6 +164,10 @@ pub struct PipelineOptions {
     pub resize: Option<ResizeMode>,
     /// Optional crop to apply before encoding.
     pub crop: Option<CropMode>,
+    /// Optional extend (padding) to apply after crop and before resize.
+    pub extend: Option<ExtendMode>,
+    /// Fill color for the extended region (defaults to opaque white).
+    pub fill_color: Option<FillColor>,
 }
 
 /// Result of a pipeline conversion.
@@ -166,6 +212,9 @@ pub enum SlimgError {
     #[error("crop error: {message}")]
     Crop { message: String },
 
+    #[error("extend error: {message}")]
+    Extend { message: String },
+
     #[error("I/O error: {message}")]
     Io { message: String },
 
@@ -187,6 +236,7 @@ impl From<slimg_core::Error> for SlimgError {
             slimg_core::Error::Encode(s) => SlimgError::Encode { message: s },
             slimg_core::Error::Resize(s) => SlimgError::Resize { message: s },
             slimg_core::Error::Crop(s) => SlimgError::Crop { message: s },
+            slimg_core::Error::Extend(s) => SlimgError::Extend { message: s },
             slimg_core::Error::Io(e) => SlimgError::Io {
                 message: e.to_string(),
             },
@@ -251,6 +301,8 @@ fn convert(image: &ImageData, options: &PipelineOptions) -> Result<PipelineResul
         quality: options.quality,
         resize: options.resize.as_ref().map(|r| r.to_core()),
         crop: options.crop.as_ref().map(|c| c.to_core()),
+        extend: options.extend.as_ref().map(|e| e.to_core()),
+        fill_color: options.fill_color.as_ref().map(|f| f.to_core()),
     };
     let result = slimg_core::convert(&image.to_core(), &core_options)?;
     Ok(PipelineResult {

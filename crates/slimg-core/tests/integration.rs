@@ -25,6 +25,8 @@ fn convert_jpeg_to_webp() {
         quality: 90,
         resize: None,
         crop: None,
+        extend: None,
+        fill_color: None,
     };
     let jpeg_result = convert(&image, &jpeg_options).expect("JPEG encode failed");
     assert!(!jpeg_result.data.is_empty());
@@ -42,6 +44,8 @@ fn convert_jpeg_to_webp() {
         quality: 80,
         resize: None,
         crop: None,
+        extend: None,
+        fill_color: None,
     };
     let webp_result = convert(&decoded, &webp_options).expect("WebP encode failed");
     assert!(!webp_result.data.is_empty());
@@ -61,6 +65,8 @@ fn convert_with_resize() {
         quality: 80,
         resize: Some(ResizeMode::Width(50)),
         crop: None,
+        extend: None,
+        fill_color: None,
     };
     let result = convert(&image, &options).expect("PNG encode with resize failed");
     assert!(!result.data.is_empty());
@@ -85,6 +91,8 @@ fn roundtrip_all_encodable_formats() {
             quality: 80,
             resize: None,
             crop: None,
+            extend: None,
+            fill_color: None,
         };
 
         // Encode
@@ -115,6 +123,8 @@ fn convert_with_crop_region() {
         quality: 80,
         resize: None,
         crop: Some(CropMode::Region { x: 10, y: 10, width: 50, height: 40 }),
+        extend: None,
+        fill_color: None,
     };
     let result = convert(&image, &options).expect("PNG encode with crop failed");
     assert!(!result.data.is_empty());
@@ -133,6 +143,8 @@ fn convert_with_crop_aspect_ratio() {
         quality: 80,
         resize: None,
         crop: Some(CropMode::AspectRatio { width: 1, height: 1 }),
+        extend: None,
+        fill_color: None,
     };
     let result = convert(&image, &options).expect("WebP encode with crop failed");
     assert!(!result.data.is_empty());

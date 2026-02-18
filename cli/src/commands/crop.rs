@@ -126,6 +126,8 @@ pub fn run(args: CropArgs) -> anyhow::Result<()> {
                 quality: args.quality,
                 resize: None,
                 crop: Some(crop_mode.clone()),
+                extend: None,
+                fill_color: None,
             };
 
             let result =

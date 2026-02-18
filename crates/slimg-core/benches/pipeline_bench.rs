@@ -51,6 +51,8 @@ fn bench_convert(c: &mut Criterion) {
             quality: 80,
             resize: None,
             crop: None,
+            extend: None,
+            fill_color: None,
         };
 
         group.bench_with_input(

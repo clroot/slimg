@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 
 use crate::codec::{EncodeOptions, ImageData, get_codec};
 use crate::error::{Error, Result};
+use crate::extend::{self, ExtendMode, FillColor};
 use crate::format::Format;
 use crate::crop::{self, CropMode};
 use crate::resize::{self, ResizeMode};
@@ -18,6 +19,10 @@ pub struct PipelineOptions {
     pub resize: Option<ResizeMode>,
     /// Optional crop to apply before encoding.
     pub crop: Option<CropMode>,
+    /// Optional extend (padding) to apply after crop and before resize.
+    pub extend: Option<ExtendMode>,
+    /// Fill color for the extended region (defaults to opaque white).
+    pub fill_color: Option<FillColor>,
 }
 
 /// Result of a pipeline conversion.
@@ -62,6 +67,16 @@ pub fn convert(image: &ImageData, options: &PipelineOptions) -> Result<PipelineR
     let image = match &options.crop {
         Some(mode) => crop::crop(image, mode)?,
         None => image.clone(),
+    };
+
+    let image = match &options.extend {
+        Some(mode) => {
+            let fill = options
+                .fill_color
+                .unwrap_or(FillColor::Solid([255, 255, 255, 255]));
+            extend::extend(&image, mode, &fill)?
+        }
+        None => image,
     };
 
     let image = match &options.resize {
@@ -146,6 +161,8 @@ mod tests {
             quality: 80,
             resize: None,
             crop: None,
+            extend: None,
+            fill_color: None,
         };
         let result = convert(&image, &options);
         assert!(result.is_err(), "converting to JXL should fail");
