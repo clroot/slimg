@@ -20,6 +20,7 @@
   run: |
     echo "CC=cl" >> $GITHUB_ENV
     echo "CXX=cl" >> $GITHUB_ENV
+    echo "_CL_=/MT" >> $GITHUB_ENV
 
 - name: Set dav1d build-from-source flag
   shell: bash

@@ -44,7 +44,7 @@ jobs:
             resource_dir: darwin-aarch64
 
           - target: x86_64-apple-darwin
-            runner: macos-13
+            runner: macos-15-intel
             lib: libslimg_ffi.dylib
             resource_dir: darwin-x86-64
 
