@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/slimg-core", "cli"]
+members = ["crates/slimg-core", "crates/slimg-ffi", "cli"]
 
 # The profile that 'dist' will build with
 [profile.dist]
