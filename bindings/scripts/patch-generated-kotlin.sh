@@ -14,7 +14,7 @@ fi
 # In SlimgException subclasses, rename constructor parameter `message` to `msg`
 # and update the corresponding message override.
 sed -i.bak -E '
-    /class (Decode|Encode|Resize|Io|Image)\(/,/\}/ {
+    /class (Crop|Decode|Encode|Resize|Io|Image)\(/,/\}/ {
         s/val `message`: kotlin\.String/val `msg`: kotlin.String/
         s/get\(\) = "message=\$\{ `message` \}"/get() = "message=${ `msg` }"/
     }
@@ -22,6 +22,7 @@ sed -i.bak -E '
 
 # Also update FfiConverterTypeSlimgError references
 sed -i.bak -E '
+    s/SlimgException\.Crop\(`message`/SlimgException.Crop(`msg`/
     s/SlimgException\.Decode\(`message`/SlimgException.Decode(`msg`/
     s/SlimgException\.Encode\(`message`/SlimgException.Encode(`msg`/
     s/SlimgException\.Resize\(`message`/SlimgException.Resize(`msg`/

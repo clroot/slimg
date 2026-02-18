@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use crate::codec::{EncodeOptions, ImageData, get_codec};
 use crate::error::{Error, Result};
 use crate::format::Format;
+use crate::crop::{self, CropMode};
 use crate::resize::{self, ResizeMode};
 
 /// Options for a conversion pipeline.
@@ -15,6 +16,8 @@ pub struct PipelineOptions {
     pub quality: u8,
     /// Optional resize to apply before encoding.
     pub resize: Option<ResizeMode>,
+    /// Optional crop to apply before encoding.
+    pub crop: Option<CropMode>,
 }
 
 /// Result of a pipeline conversion.
@@ -56,9 +59,14 @@ pub fn convert(image: &ImageData, options: &PipelineOptions) -> Result<PipelineR
         return Err(Error::EncodingNotSupported(options.format));
     }
 
-    let image = match &options.resize {
-        Some(mode) => resize::resize(image, mode)?,
+    let image = match &options.crop {
+        Some(mode) => crop::crop(image, mode)?,
         None => image.clone(),
+    };
+
+    let image = match &options.resize {
+        Some(mode) => resize::resize(&image, mode)?,
+        None => image,
     };
 
     let codec = get_codec(options.format);
@@ -137,6 +145,7 @@ mod tests {
             format: Format::Jxl,
             quality: 80,
             resize: None,
+            crop: None,
         };
         let result = convert(&image, &options);
         assert!(result.is_err(), "converting to JXL should fail");

@@ -49,6 +49,7 @@ pub fn run(args: ConvertArgs) -> anyhow::Result<()> {
         format: target_format,
         quality: args.quality,
         resize: None,
+        crop: None,
     };
 
     let pb = make_progress_bar(files.len());

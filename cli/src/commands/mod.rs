@@ -1,4 +1,5 @@
 pub mod convert;
+pub mod crop;
 pub mod optimize;
 pub mod resize;
 
