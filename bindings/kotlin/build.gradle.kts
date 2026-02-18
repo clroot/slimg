@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "2.1.0"
     `maven-publish`
+    signing
 }
 
 group = property("group") as String
@@ -55,4 +56,28 @@ publishing {
             }
         }
     }
+
+    repositories {
+        maven {
+            name = "OSSRH"
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            credentials {
+                username = findProperty("mavenCentralUsername") as String? ?: System.getenv("MAVEN_CENTRAL_USERNAME") ?: ""
+                password = findProperty("mavenCentralPassword") as String? ?: System.getenv("MAVEN_CENTRAL_PASSWORD") ?: ""
+            }
+        }
+    }
+}
+
+signing {
+    val signingKey = System.getenv("GPG_SIGNING_KEY")
+    val signingPassword = System.getenv("GPG_SIGNING_PASSWORD")
+    if (signingKey != null && signingPassword != null) {
+        useInMemoryPgpKeys(signingKey, signingPassword)
+    }
+    sign(publishing.publications["maven"])
+}
+
+tasks.withType<Sign>().configureEach {
+    onlyIf { gradle.taskGraph.hasTask("publish") }
 }
