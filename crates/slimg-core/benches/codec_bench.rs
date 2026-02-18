@@ -28,13 +28,8 @@ fn encodable_formats() -> Vec<Format> {
 }
 
 /// Formats that support both encoding and decoding (needed for decode benchmarks).
-///
-/// AVIF decoding is only supported on macOS.
 fn decodable_formats() -> Vec<Format> {
-    let mut formats = vec![Format::Jpeg, Format::Png, Format::WebP, Format::Qoi];
-    #[cfg(target_os = "macos")]
-    formats.push(Format::Avif);
-    formats
+    vec![Format::Jpeg, Format::Png, Format::WebP, Format::Qoi, Format::Avif]
 }
 
 fn bench_encode(c: &mut Criterion) {

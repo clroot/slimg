@@ -131,6 +131,9 @@ jobs:
         if: "runner.os == 'Windows'"
         run: "echo C:/Program Files/NASM >> $GITHUB_PATH"
         shell: "bash"
+      - name: "Set dav1d build-from-source flag"
+        run: "echo \"SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always\" >> $GITHUB_ENV"
+        shell: "bash"
       - name: Install dist
         run: ${{ matrix.install_dist.run }}
       # Get the dist-manifest

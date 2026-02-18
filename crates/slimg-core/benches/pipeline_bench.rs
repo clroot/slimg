@@ -29,16 +29,12 @@ fn pre_encode(image: &ImageData, format: Format, quality: u8) -> Vec<u8> {
 fn bench_convert(c: &mut Criterion) {
     let image = generate_test_image(BENCH_IMAGE_SIZE, BENCH_IMAGE_SIZE);
 
-    let conversions: Vec<(&str, Format, Format)> = {
-        let mut v = vec![
-            ("jpeg_to_webp", Format::Jpeg, Format::WebP),
-            ("png_to_jpeg", Format::Png, Format::Jpeg),
-            ("webp_to_png", Format::WebP, Format::Png),
-        ];
-        #[cfg(target_os = "macos")]
-        v.push(("png_to_avif", Format::Png, Format::Avif));
-        v
-    };
+    let conversions: Vec<(&str, Format, Format)> = vec![
+        ("jpeg_to_webp", Format::Jpeg, Format::WebP),
+        ("png_to_jpeg", Format::Png, Format::Jpeg),
+        ("webp_to_png", Format::WebP, Format::Png),
+        ("png_to_avif", Format::Png, Format::Avif),
+    ];
 
     let pixel_count = (BENCH_IMAGE_SIZE as u64) * (BENCH_IMAGE_SIZE as u64);
     let mut group = c.benchmark_group("convert");
@@ -71,16 +67,12 @@ fn bench_convert(c: &mut Criterion) {
 fn bench_optimize(c: &mut Criterion) {
     let image = generate_test_image(BENCH_IMAGE_SIZE, BENCH_IMAGE_SIZE);
 
-    let formats = {
-        let mut v = vec![
-            ("Jpeg", Format::Jpeg),
-            ("Png", Format::Png),
-            ("WebP", Format::WebP),
-        ];
-        #[cfg(target_os = "macos")]
-        v.push(("Avif", Format::Avif));
-        v
-    };
+    let formats = vec![
+        ("Jpeg", Format::Jpeg),
+        ("Png", Format::Png),
+        ("WebP", Format::WebP),
+        ("Avif", Format::Avif),
+    ];
 
     let mut group = c.benchmark_group("optimize");
 

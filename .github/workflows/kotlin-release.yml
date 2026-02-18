@@ -15,6 +15,8 @@ jobs:
   build-native:
     name: Build native (${{ matrix.target }})
     runs-on: ${{ matrix.runner }}
+    env:
+      SYSTEM_DEPS_DAV1D_BUILD_INTERNAL: always
     strategy:
       fail-fast: false
       matrix:
@@ -55,18 +57,18 @@ jobs:
 
       - name: Install system dependencies (macOS native)
         if: runner.os == 'macOS' && matrix.target == 'aarch64-apple-darwin'
-        run: brew install nasm dav1d
+        run: brew install nasm meson ninja
 
       - name: Install system dependencies (macOS x86_64 cross)
         if: matrix.target == 'x86_64-apple-darwin'
         run: |
           # Install x86_64 Homebrew and dependencies for cross-compilation
           arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          arch -x86_64 /usr/local/bin/brew install nasm dav1d
+          arch -x86_64 /usr/local/bin/brew install nasm meson ninja
 
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux' && !matrix.cross
-        run: sudo apt-get update && sudo apt-get install -y nasm
+        run: sudo apt-get update && sudo apt-get install -y nasm meson ninja-build
 
       - name: Install cross (Linux aarch64)
         if: matrix.cross
@@ -80,7 +82,7 @@ jobs:
       - name: Install NASM (Windows)
         if: runner.os == 'Windows'
         shell: bash
-        run: choco install nasm -y
+        run: choco install nasm meson ninja -y
 
       - name: Build with cargo
         if: ${{ !matrix.cross }}
@@ -102,6 +104,8 @@ jobs:
   generate-bindings:
     name: Generate Kotlin bindings
     runs-on: macos-latest
+    env:
+      SYSTEM_DEPS_DAV1D_BUILD_INTERNAL: always
     steps:
       - uses: actions/checkout@v4
 
@@ -109,7 +113,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install system dependencies
-        run: brew install nasm dav1d
+        run: brew install nasm meson ninja
 
       - name: Build slimg-ffi
         run: cargo build --release -p slimg-ffi
