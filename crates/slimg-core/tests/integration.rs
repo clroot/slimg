@@ -74,11 +74,7 @@ fn convert_with_resize() {
 fn roundtrip_all_encodable_formats() {
     let image = create_test_image();
 
-    let mut formats = vec![Format::Jpeg, Format::Png, Format::WebP, Format::Qoi];
-
-    // AVIF decoding is only available on macOS (requires dav1d >= 1.3.0, only Homebrew provides it)
-    #[cfg(target_os = "macos")]
-    formats.push(Format::Avif);
+    let formats = vec![Format::Jpeg, Format::Png, Format::WebP, Format::Qoi, Format::Avif];
 
     for fmt in formats {
         let options = PipelineOptions {

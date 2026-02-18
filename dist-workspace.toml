@@ -23,10 +23,15 @@ github-build-setup = "build-setup.yml"
 # System dependencies required for building
 [dist.dependencies.homebrew]
 nasm = { stage = ["build"] }
-dav1d = { stage = ["build", "run"] }
+meson = { stage = ["build"] }
+ninja = { stage = ["build"] }
 
 [dist.dependencies.apt]
 nasm = '*'
+meson = '*'
+ninja-build = '*'
 
 [dist.dependencies.chocolatey]
 nasm = '*'
+meson = '*'
+ninja = '*'
