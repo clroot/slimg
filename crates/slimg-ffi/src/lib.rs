@@ -318,6 +318,13 @@ fn crop(image: &ImageData, mode: &CropMode) -> Result<ImageData, SlimgError> {
     Ok(ImageData::from_core(result))
 }
 
+/// Extend an image by adding padding around it.
+#[uniffi::export]
+fn extend(image: &ImageData, mode: &ExtendMode, fill: &FillColor) -> Result<ImageData, SlimgError> {
+    let result = slimg_core::extend::extend(&image.to_core(), &mode.to_core(), &fill.to_core())?;
+    Ok(ImageData::from_core(result))
+}
+
 /// Decode the data and re-encode in the same format at the given quality.
 #[uniffi::export]
 fn optimize(data: Vec<u8>, quality: u8) -> Result<PipelineResult, SlimgError> {
