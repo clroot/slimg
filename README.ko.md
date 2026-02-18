@@ -17,6 +17,12 @@
 
 ## 설치
 
+### Cargo (crates.io)
+
+```
+cargo install slimg
+```
+
 ### Homebrew (macOS / Linux)
 
 ```

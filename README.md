@@ -17,6 +17,12 @@ A fast image optimization CLI. Convert, compress, and resize images using modern
 
 ## Installation
 
+### Cargo (crates.io)
+
+```
+cargo install slimg
+```
+
 ### Homebrew (macOS / Linux)
 
 ```
