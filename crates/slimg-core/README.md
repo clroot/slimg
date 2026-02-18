@@ -59,4 +59,4 @@ For batch processing and command-line usage, see [slimg](https://crates.io/crate
 
 ## License
 
-MIT OR Apache-2.0
+MIT

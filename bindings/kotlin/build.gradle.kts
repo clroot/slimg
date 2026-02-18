@@ -42,7 +42,7 @@ mavenPublishing {
 
         licenses {
             license {
-                name.set("MIT OR Apache-2.0")
+                name.set("MIT")
                 url.set("https://github.com/clroot/slimg/blob/main/LICENSE")
             }
         }

@@ -123,4 +123,4 @@ result.save(Path::new("photo.webp"))?;
 
 ## 라이선스
 
-MIT OR Apache-2.0
+MIT
