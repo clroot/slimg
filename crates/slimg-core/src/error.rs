@@ -23,6 +23,9 @@ pub enum Error {
     #[error("crop error: {0}")]
     Crop(String),
 
+    #[error("extend error: {0}")]
+    Extend(String),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
