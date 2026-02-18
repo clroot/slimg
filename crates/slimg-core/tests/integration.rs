@@ -24,6 +24,7 @@ fn convert_jpeg_to_webp() {
         format: Format::Jpeg,
         quality: 90,
         resize: None,
+        crop: None,
     };
     let jpeg_result = convert(&image, &jpeg_options).expect("JPEG encode failed");
     assert!(!jpeg_result.data.is_empty());
@@ -40,6 +41,7 @@ fn convert_jpeg_to_webp() {
         format: Format::WebP,
         quality: 80,
         resize: None,
+        crop: None,
     };
     let webp_result = convert(&decoded, &webp_options).expect("WebP encode failed");
     assert!(!webp_result.data.is_empty());
@@ -58,6 +60,7 @@ fn convert_with_resize() {
         format: Format::Png,
         quality: 80,
         resize: Some(ResizeMode::Width(50)),
+        crop: None,
     };
     let result = convert(&image, &options).expect("PNG encode with resize failed");
     assert!(!result.data.is_empty());
@@ -81,6 +84,7 @@ fn roundtrip_all_encodable_formats() {
             format: fmt,
             quality: 80,
             resize: None,
+            crop: None,
         };
 
         // Encode

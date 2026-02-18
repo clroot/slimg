@@ -50,6 +50,7 @@ fn bench_convert(c: &mut Criterion) {
             format: *dst_format,
             quality: 80,
             resize: None,
+            crop: None,
         };
 
         group.bench_with_input(

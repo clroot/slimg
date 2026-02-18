@@ -139,6 +139,9 @@ pub enum SlimgError {
     #[error("resize error: {message}")]
     Resize { message: String },
 
+    #[error("crop error: {message}")]
+    Crop { message: String },
+
     #[error("I/O error: {message}")]
     Io { message: String },
 
@@ -159,6 +162,7 @@ impl From<slimg_core::Error> for SlimgError {
             slimg_core::Error::Decode(s) => SlimgError::Decode { message: s },
             slimg_core::Error::Encode(s) => SlimgError::Encode { message: s },
             slimg_core::Error::Resize(s) => SlimgError::Resize { message: s },
+            slimg_core::Error::Crop(s) => SlimgError::Crop { message: s },
             slimg_core::Error::Io(e) => SlimgError::Io {
                 message: e.to_string(),
             },
@@ -222,6 +226,7 @@ fn convert(image: &ImageData, options: &PipelineOptions) -> Result<PipelineResul
         format: options.format.to_core(),
         quality: options.quality,
         resize: options.resize.as_ref().map(|r| r.to_core()),
+        crop: None,
     };
     let result = slimg_core::convert(&image.to_core(), &core_options)?;
     Ok(PipelineResult {
