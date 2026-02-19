@@ -1,5 +1,7 @@
 # slimg
 
+[![PyPI](https://img.shields.io/pypi/v/slimg)](https://pypi.org/project/slimg/)
+
 Python bindings for the [slimg](https://github.com/clroot/slimg) image optimization library.
 
 Supports macOS (Apple Silicon, Intel), Linux (x86_64, ARM64), and Windows (x86_64) -- native extensions are bundled in pre-built wheels.
