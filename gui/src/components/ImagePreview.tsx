@@ -1,11 +1,6 @@
 import type { ImageInfo, ProcessResult } from "@/lib/tauri";
+import { formatBytes } from "@/lib/format";
 import { basename } from "@/lib/path";
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 interface ImagePreviewProps {
   original: { path: string; info: ImageInfo };
