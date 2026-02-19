@@ -47,9 +47,10 @@ class TestConvert:
         result = slimg.convert(sample_image, format=slimg.Format.PNG, quality=80)
         assert result.format == slimg.Format.PNG
 
-    def test_jxl_encode_raises(self, sample_image):
-        with pytest.raises(slimg.SlimgError):
-            slimg.convert(sample_image, format="jxl", quality=80)
+    def test_to_jxl(self, sample_image):
+        result = slimg.convert(sample_image, format="jxl", quality=80)
+        assert result.format == slimg.Format.JXL
+        assert len(result.data) > 0
 
     def test_full_pipeline_crop_extend(self, sample_image_100):
         result = slimg.convert(
