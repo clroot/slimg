@@ -38,6 +38,21 @@ jobs:
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y nasm meson ninja-build
 
+      - name: Checkout submodules (for slimg-core dav1d build)
+        run: git submodule update --init --recursive
+
+      - name: Publish slimg-libjxl-sys
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          # --no-default-features: disable vendored so cmake/bindgen are not needed
+          # --no-verify: skip sandbox build (prebuilt archive not available during packaging)
+          cargo publish -p slimg-libjxl-sys --no-default-features --no-verify \
+            || echo "Already published, skipping"
+
+      - name: Wait for crates.io index (slimg-libjxl-sys)
+        run: sleep 30
+
       - name: Publish slimg-core
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

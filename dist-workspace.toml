@@ -24,15 +24,18 @@ github-build-setup = "../ci/build-setup.yml"
 
 # System dependencies required for building
 [dist.dependencies.homebrew]
+cmake = { stage = ["build"] }
 nasm = { stage = ["build"] }
 meson = { stage = ["build"] }
 ninja = { stage = ["build"] }
 
 [dist.dependencies.apt]
+cmake = '*'
 nasm = '*'
 meson = '*'
 ninja-build = '*'
 
 [dist.dependencies.chocolatey]
+cmake = '*'
 nasm = '*'
 ninja = '*'

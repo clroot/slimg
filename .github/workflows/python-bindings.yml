@@ -6,12 +6,14 @@ on:
     paths:
       - 'crates/slimg-ffi/**'
       - 'crates/slimg-core/**'
+      - 'crates/libjxl-sys/**'
       - 'bindings/python/**'
       - '.github/workflows/python-bindings.yml'
   pull_request:
     paths:
       - 'crates/slimg-ffi/**'
       - 'crates/slimg-core/**'
+      - 'crates/libjxl-sys/**'
       - 'bindings/python/**'
       - '.github/workflows/python-bindings.yml'
 
@@ -27,6 +29,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -38,11 +42,11 @@ jobs:
 
       - name: Install system dependencies (macOS)
         if: runner.os == 'macOS'
-        run: brew install nasm meson ninja
+        run: brew install cmake nasm meson ninja
 
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y nasm meson ninja-build
+        run: sudo apt-get update && sudo apt-get install -y cmake nasm meson ninja-build
 
       - name: Setup MSVC environment (Windows)
         if: runner.os == 'Windows'
@@ -57,7 +61,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          choco install nasm ninja pkgconfiglite -y
+          choco install cmake nasm ninja pkgconfiglite -y
           pip install meson
 
       - name: Force MSVC compiler for meson (Windows)

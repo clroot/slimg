@@ -1,0 +1,26 @@
+[package]
+name = "slimg-libjxl-sys"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Minimal FFI bindings to libjxl encoder/decoder"
+repository = "https://github.com/clroot/slimg"
+homepage = "https://github.com/clroot/slimg"
+links = "jxl"
+include = [
+    "build.rs",
+    "src/**/*",
+    "Cargo.toml",
+    "LICENSE*",
+]
+
+[features]
+default = ["vendored"]
+vendored = ["dep:cmake", "dep:bindgen"]
+
+[build-dependencies]
+cmake = { version = "0.1", optional = true }
+bindgen = { version = "0.71", optional = true }
+
+[package.metadata.docs.rs]
+no-default-features = true

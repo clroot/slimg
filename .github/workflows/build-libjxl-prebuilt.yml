@@ -1,0 +1,302 @@
+name: Build libjxl Prebuilt Libraries
+
+on:
+  workflow_dispatch:
+    inputs:
+      crate_version:
+        description: 'slimg-libjxl-sys crate version (e.g. 0.1.0)'
+        required: true
+        type: string
+      libjxl_tag:
+        description: 'libjxl git tag to build (e.g. v0.11.1)'
+        required: true
+        default: 'v0.11.1'
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  RELEASE_TAG: libjxl-prebuilt-v${{ inputs.crate_version }}
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86_64
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+
+          - platform: linux-aarch64
+            runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+
+          - platform: macos-x86_64
+            runner: macos-15-intel
+            target: x86_64-apple-darwin
+
+          - platform: macos-aarch64
+            runner: macos-latest
+            target: aarch64-apple-darwin
+
+          - platform: windows-x86_64
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout libjxl ${{ inputs.libjxl_tag }}
+        shell: bash
+        run: |
+          git clone --depth 1 --branch "${{ inputs.libjxl_tag }}" \
+            --recurse-submodules --shallow-submodules \
+            https://github.com/libjxl/libjxl.git \
+            libjxl-src
+
+      # ── Platform toolchain setup ───────────────────────────────────────
+      - name: Install build tools (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build nasm clang libclang-dev
+
+      - name: Install build tools (macOS)
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja nasm
+
+      - name: Setup MSVC (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install build tools (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          choco install cmake ninja nasm -y
+          echo "C:/Program Files/NASM" >> $GITHUB_PATH
+          echo "CC=cl" >> $GITHUB_ENV
+          echo "CXX=cl" >> $GITHUB_ENV
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      # ── Build libjxl via cmake ─────────────────────────────────────────
+      - name: Configure libjxl (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          cmake \
+            -S libjxl-src \
+            -B libjxl-build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="${PWD}/libjxl-install" \
+            -DBUILD_TESTING=OFF \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DJPEGXL_ENABLE_TOOLS=OFF \
+            -DJPEGXL_ENABLE_DOXYGEN=OFF \
+            -DJPEGXL_ENABLE_MANPAGES=OFF \
+            -DJPEGXL_ENABLE_BENCHMARK=OFF \
+            -DJPEGXL_ENABLE_EXAMPLES=OFF \
+            -DJPEGXL_ENABLE_SJPEG=OFF \
+            -DJPEGXL_ENABLE_JPEGLI=OFF \
+            -DJPEGXL_ENABLE_OPENEXR=OFF \
+            -DJPEGXL_ENABLE_TCMALLOC=OFF \
+            -DJPEGXL_BUNDLE_LIBPNG=OFF \
+            -DJPEGXL_ENABLE_SKCMS=ON
+
+      - name: Configure libjxl (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cmake \
+            -S libjxl-src \
+            -B libjxl-build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="${PWD}/libjxl-install" \
+            -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded \
+            -DBUILD_TESTING=OFF \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DJPEGXL_ENABLE_TOOLS=OFF \
+            -DJPEGXL_ENABLE_DOXYGEN=OFF \
+            -DJPEGXL_ENABLE_MANPAGES=OFF \
+            -DJPEGXL_ENABLE_BENCHMARK=OFF \
+            -DJPEGXL_ENABLE_EXAMPLES=OFF \
+            -DJPEGXL_ENABLE_SJPEG=OFF \
+            -DJPEGXL_ENABLE_JPEGLI=OFF \
+            -DJPEGXL_ENABLE_OPENEXR=OFF \
+            -DJPEGXL_ENABLE_TCMALLOC=OFF \
+            -DJPEGXL_BUNDLE_LIBPNG=OFF \
+            -DJPEGXL_ENABLE_SKCMS=ON
+
+      - name: Build and install libjxl
+        shell: bash
+        run: |
+          cmake --build libjxl-build --config Release --parallel
+          cmake --install libjxl-build --config Release
+
+      # ── Generate bindings.rs via bindgen ───────────────────────────────
+      - name: Set LIBCLANG_PATH (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: echo "LIBCLANG_PATH=$(brew --prefix llvm)/lib" >> $GITHUB_ENV
+
+      - name: Generate bindings.rs
+        shell: bash
+        run: |
+          cargo install bindgen-cli --locked --quiet 2>/dev/null || true
+
+          SRC_INCLUDE="libjxl-src/lib/include"
+          INSTALL_INCLUDE="libjxl-install/include"
+
+          bindgen "${SRC_INCLUDE}/jxl/encode.h" \
+            --header "${SRC_INCLUDE}/jxl/decode.h" \
+            --header "${SRC_INCLUDE}/jxl/types.h" \
+            --header "${SRC_INCLUDE}/jxl/codestream_header.h" \
+            --header "${SRC_INCLUDE}/jxl/color_encoding.h" \
+            --allowlist-function "JxlEncoderCreate" \
+            --allowlist-function "JxlEncoderDestroy" \
+            --allowlist-function "JxlEncoderReset" \
+            --allowlist-function "JxlEncoderSetBasicInfo" \
+            --allowlist-function "JxlEncoderSetColorEncoding" \
+            --allowlist-function "JxlEncoderFrameSettingsCreate" \
+            --allowlist-function "JxlEncoderSetFrameDistance" \
+            --allowlist-function "JxlEncoderSetFrameLossless" \
+            --allowlist-function "JxlEncoderFrameSettingsSetOption" \
+            --allowlist-function "JxlEncoderAddImageFrame" \
+            --allowlist-function "JxlEncoderCloseInput" \
+            --allowlist-function "JxlEncoderProcessOutput" \
+            --allowlist-function "JxlEncoderDistanceFromQuality" \
+            --allowlist-function "JxlColorEncodingSetToSRGB" \
+            --allowlist-function "JxlDecoderCreate" \
+            --allowlist-function "JxlDecoderDestroy" \
+            --allowlist-function "JxlDecoderReset" \
+            --allowlist-function "JxlDecoderSubscribeEvents" \
+            --allowlist-function "JxlDecoderSetInput" \
+            --allowlist-function "JxlDecoderCloseInput" \
+            --allowlist-function "JxlDecoderProcessInput" \
+            --allowlist-function "JxlDecoderGetBasicInfo" \
+            --allowlist-function "JxlDecoderImageOutBufferSize" \
+            --allowlist-function "JxlDecoderSetImageOutBuffer" \
+            --allowlist-function "JxlDecoderReleaseInput" \
+            --allowlist-type "JxlEncoderStatus" \
+            --allowlist-type "JxlEncoderFrameSettingId" \
+            --allowlist-type "JxlEncoder" \
+            --allowlist-type "JxlEncoderFrameSettings" \
+            --allowlist-type "JxlDecoder" \
+            --allowlist-type "JxlDecoderStatus" \
+            --allowlist-type "JxlBasicInfo" \
+            --allowlist-type "JxlPixelFormat" \
+            --allowlist-type "JxlDataType" \
+            --allowlist-type "JxlEndianness" \
+            --allowlist-type "JxlColorEncoding" \
+            -- \
+            -I"${SRC_INCLUDE}" \
+            -I"${INSTALL_INCLUDE}" \
+            --target="${{ matrix.target }}" \
+            > libjxl-install/bindings.rs
+
+      # ── Package archive ────────────────────────────────────────────────
+      - name: Package archive (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          PLATFORM="${{ matrix.platform }}"
+          STAGE="libjxl-prebuilt-${PLATFORM}"
+          mkdir -p "${STAGE}/lib" "${STAGE}/include/jxl"
+
+          # Collect static libs from lib/ or lib64/
+          for dir in libjxl-install/lib libjxl-install/lib64; do
+            [ -d "$dir" ] || continue
+            for lib in libjxl.a libjxl_cms.a libhwy.a libbrotlienc.a libbrotlidec.a libbrotlicommon.a; do
+              [ -f "${dir}/${lib}" ] && cp "${dir}/${lib}" "${STAGE}/lib/"
+            done
+          done
+
+          cp libjxl-install/bindings.rs "${STAGE}/bindings.rs"
+          cp libjxl-install/include/jxl/*.h "${STAGE}/include/jxl/"
+
+          # Verify all required libs
+          MISSING=0
+          for lib in libjxl.a libjxl_cms.a libhwy.a libbrotlienc.a libbrotlidec.a libbrotlicommon.a; do
+            if [ ! -f "${STAGE}/lib/${lib}" ]; then
+              echo "::error::Missing ${lib}"
+              MISSING=1
+            fi
+          done
+          [ "$MISSING" -eq 0 ] || { ls -R "${STAGE}/lib/"; exit 1; }
+
+          tar -czf "libjxl-prebuilt-${PLATFORM}.tar.gz" "${STAGE}"
+
+      - name: Package archive (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          PLATFORM="${{ matrix.platform }}"
+          STAGE="libjxl-prebuilt-${PLATFORM}"
+          mkdir -p "${STAGE}/lib" "${STAGE}/include/jxl"
+
+          for lib in jxl.lib jxl_cms.lib hwy.lib brotlienc.lib brotlidec.lib brotlicommon.lib; do
+            cp "libjxl-install/lib/${lib}" "${STAGE}/lib/"
+          done
+
+          cp libjxl-install/bindings.rs "${STAGE}/bindings.rs"
+          cp libjxl-install/include/jxl/*.h "${STAGE}/include/jxl/"
+
+          # Verify all required libs
+          MISSING=0
+          for lib in jxl.lib jxl_cms.lib hwy.lib brotlienc.lib brotlidec.lib brotlicommon.lib; do
+            if [ ! -f "${STAGE}/lib/${lib}" ]; then
+              echo "::error::Missing ${lib}"
+              MISSING=1
+            fi
+          done
+          [ "$MISSING" -eq 0 ] || { ls -R "${STAGE}/lib/"; exit 1; }
+
+          tar -czf "libjxl-prebuilt-${PLATFORM}.tar.gz" "${STAGE}"
+
+      - name: Upload archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: libjxl-prebuilt-${{ matrix.platform }}
+          path: libjxl-prebuilt-${{ matrix.platform }}.tar.gz
+          retention-days: 7
+
+  # ── Create GitHub Release ────────────────────────────────────────────────
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all archives
+        uses: actions/download-artifact@v4
+        with:
+          pattern: libjxl-prebuilt-*
+          path: dist/
+          merge-multiple: true
+
+      - name: List archives
+        run: ls -lh dist/
+
+      - name: Create Release
+        run: |
+          # Delete existing release if re-running
+          gh release delete "$RELEASE_TAG" --yes 2>/dev/null || true
+          git push origin --delete "$RELEASE_TAG" 2>/dev/null || true
+
+          gh release create "$RELEASE_TAG" \
+            --title "libjxl prebuilt v${{ inputs.crate_version }}" \
+            --notes "Prebuilt static libraries for slimg-libjxl-sys v${{ inputs.crate_version }} (libjxl ${{ inputs.libjxl_tag }})" \
+            dist/*.tar.gz
