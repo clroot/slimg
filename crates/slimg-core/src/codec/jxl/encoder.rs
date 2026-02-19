@@ -1,6 +1,6 @@
 use std::ptr;
 
-use libjxl_enc_sys::*;
+use libjxl_sys::*;
 
 use crate::error::{Error, Result};
 
@@ -66,6 +66,7 @@ impl Encoder {
             info.num_extra_channels = 1;
             info.alpha_bits = 8;
             info.alpha_exponent_bits = 0;
+            info.orientation = JxlOrientation_JXL_ORIENT_IDENTITY;
             info.uses_original_profile = if config.lossless { 1 } else { 0 };
 
             check_status(

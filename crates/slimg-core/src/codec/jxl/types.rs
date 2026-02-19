@@ -13,7 +13,7 @@ impl EncodeConfig {
             };
         }
         let distance =
-            unsafe { libjxl_enc_sys::JxlEncoderDistanceFromQuality(quality as f32) };
+            unsafe { libjxl_sys::JxlEncoderDistanceFromQuality(quality as f32) };
         Self {
             lossless: false,
             distance,

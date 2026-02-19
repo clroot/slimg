@@ -70,11 +70,8 @@ impl Format {
     }
 
     /// Whether encoding is supported for this format.
-    ///
-    /// Returns `false` only for JXL due to GPL license restrictions
-    /// in the reference encoder.
     pub fn can_encode(&self) -> bool {
-        !matches!(self, Self::Jxl)
+        true
     }
 }
 
@@ -272,16 +269,12 @@ mod tests {
     // ── can_encode ──────────────────────────────────────────────
 
     #[test]
-    fn can_encode_jxl_is_false() {
-        assert!(!Format::Jxl.can_encode());
-    }
-
-    #[test]
-    fn can_encode_all_others_true() {
+    fn can_encode_all_formats() {
         assert!(Format::Jpeg.can_encode());
         assert!(Format::Png.can_encode());
         assert!(Format::WebP.can_encode());
         assert!(Format::Avif.can_encode());
+        assert!(Format::Jxl.can_encode());
         assert!(Format::Qoi.can_encode());
     }
 }

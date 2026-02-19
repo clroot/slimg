@@ -154,7 +154,7 @@ mod tests {
     }
 
     #[test]
-    fn jxl_encode_returns_error() {
+    fn jxl_encode_succeeds() {
         let image = ImageData::new(2, 2, vec![128u8; 16]);
         let options = PipelineOptions {
             format: Format::Jxl,
@@ -165,6 +165,6 @@ mod tests {
             fill_color: None,
         };
         let result = convert(&image, &options);
-        assert!(result.is_err(), "converting to JXL should fail");
+        assert!(result.is_ok(), "converting to JXL should succeed");
     }
 }

@@ -23,7 +23,17 @@ fn main() {
     println!("cargo:rustc-link-search=native={}", lib_dir.display());
     println!("cargo:rustc-link-search=native={}", lib64_dir.display());
 
-    // libjxl core (encoder is bundled into libjxl.a)
+    // skcms transform files not included in libjxl's skcms.cmake
+    let skcms_src = PathBuf::from("libjxl/third_party/skcms/src");
+    let skcms_inc = PathBuf::from("libjxl/third_party/skcms/src");
+    cc::Build::new()
+        .cpp(true)
+        .file(skcms_src.join("skcms_TransformBaseline.cc"))
+        .include(&skcms_inc)
+        .flag_if_supported("-Wno-psabi")
+        .compile("skcms_transform");
+
+    // libjxl core (encoder + decoder are bundled into libjxl.a)
     println!("cargo:rustc-link-lib=static=jxl");
     println!("cargo:rustc-link-lib=static=jxl_cms");
 
@@ -48,13 +58,14 @@ fn main() {
 
     let bindings = bindgen::Builder::default()
         .header(src_include.join("jxl/encode.h").to_str().unwrap())
+        .header(src_include.join("jxl/decode.h").to_str().unwrap())
         .header(src_include.join("jxl/types.h").to_str().unwrap())
         .header(src_include.join("jxl/codestream_header.h").to_str().unwrap())
         .header(src_include.join("jxl/color_encoding.h").to_str().unwrap())
         .clang_arg(format!("-I{}", src_include.display()))
         .clang_arg(format!("-I{}", include_dir.display()))
         .clang_arg(format!("--target={target}"))
-        // Encoder functions only
+        // Encoder functions
         .allowlist_function("JxlEncoderCreate")
         .allowlist_function("JxlEncoderDestroy")
         .allowlist_function("JxlEncoderReset")
@@ -69,16 +80,32 @@ fn main() {
         .allowlist_function("JxlEncoderProcessOutput")
         .allowlist_function("JxlEncoderDistanceFromQuality")
         .allowlist_function("JxlColorEncodingSetToSRGB")
-        // Types
+        // Decoder functions
+        .allowlist_function("JxlDecoderCreate")
+        .allowlist_function("JxlDecoderDestroy")
+        .allowlist_function("JxlDecoderReset")
+        .allowlist_function("JxlDecoderSubscribeEvents")
+        .allowlist_function("JxlDecoderSetInput")
+        .allowlist_function("JxlDecoderCloseInput")
+        .allowlist_function("JxlDecoderProcessInput")
+        .allowlist_function("JxlDecoderGetBasicInfo")
+        .allowlist_function("JxlDecoderImageOutBufferSize")
+        .allowlist_function("JxlDecoderSetImageOutBuffer")
+        .allowlist_function("JxlDecoderReleaseInput")
+        // Encoder types
+        .allowlist_type("JxlEncoderStatus")
+        .allowlist_type("JxlEncoderFrameSettingId")
+        .allowlist_type("JxlEncoder")
+        .allowlist_type("JxlEncoderFrameSettings")
+        // Decoder types
+        .allowlist_type("JxlDecoder")
+        .allowlist_type("JxlDecoderStatus")
+        // Shared types
         .allowlist_type("JxlBasicInfo")
         .allowlist_type("JxlPixelFormat")
         .allowlist_type("JxlDataType")
         .allowlist_type("JxlEndianness")
         .allowlist_type("JxlColorEncoding")
-        .allowlist_type("JxlEncoderStatus")
-        .allowlist_type("JxlEncoderFrameSettingId")
-        .allowlist_type("JxlEncoder")
-        .allowlist_type("JxlEncoderFrameSettings")
         .generate()
         .expect("failed to generate libjxl bindings");
 
