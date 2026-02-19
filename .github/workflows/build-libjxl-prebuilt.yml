@@ -157,11 +157,16 @@ jobs:
           SRC_INCLUDE="libjxl-src/lib/include"
           INSTALL_INCLUDE="libjxl-install/include"
 
-          bindgen "${SRC_INCLUDE}/jxl/encode.h" \
-            --header "${SRC_INCLUDE}/jxl/decode.h" \
-            --header "${SRC_INCLUDE}/jxl/types.h" \
-            --header "${SRC_INCLUDE}/jxl/codestream_header.h" \
-            --header "${SRC_INCLUDE}/jxl/color_encoding.h" \
+          # bindgen CLI takes a single header; create a wrapper that includes all needed headers
+          cat > wrapper.h <<HEADER
+          #include "jxl/encode.h"
+          #include "jxl/decode.h"
+          #include "jxl/types.h"
+          #include "jxl/codestream_header.h"
+          #include "jxl/color_encoding.h"
+          HEADER
+
+          bindgen wrapper.h \
             --allowlist-function "JxlEncoderCreate" \
             --allowlist-function "JxlEncoderDestroy" \
             --allowlist-function "JxlEncoderReset" \
