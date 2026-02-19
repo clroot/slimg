@@ -92,6 +92,8 @@ jobs:
           echo "C:/Program Files/NASM" >> $GITHUB_PATH
           echo "CC=cl" >> $GITHUB_ENV
           echo "CXX=cl" >> $GITHUB_ENV
+          # Remove Git Bash's /usr/bin/link which conflicts with MSVC link.exe
+          rm -f /usr/bin/link
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
