@@ -12,13 +12,14 @@ use clap::ValueEnum;
 use indicatif::{ProgressBar, ProgressStyle};
 use slimg_core::Format;
 
-/// Image format argument for CLI (excludes JXL which cannot be encoded).
+/// Image format argument for CLI.
 #[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum FormatArg {
     Jpeg,
     Png,
     Webp,
     Avif,
+    Jxl,
     Qoi,
 }
 
@@ -29,6 +30,7 @@ impl FormatArg {
             Self::Png => Format::Png,
             Self::Webp => Format::WebP,
             Self::Avif => Format::Avif,
+            Self::Jxl => Format::Jxl,
             Self::Qoi => Format::Qoi,
         }
     }
