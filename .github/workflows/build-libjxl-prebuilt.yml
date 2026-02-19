@@ -53,10 +53,21 @@ jobs:
       - name: Checkout libjxl ${{ inputs.libjxl_tag }}
         shell: bash
         run: |
-          git clone --depth 1 --branch "${{ inputs.libjxl_tag }}" \
-            --recurse-submodules --shallow-submodules \
-            https://github.com/libjxl/libjxl.git \
-            libjxl-src
+          for attempt in 1 2 3; do
+            echo "Attempt ${attempt}/3: cloning libjxl..."
+            if git clone --depth 1 --branch "${{ inputs.libjxl_tag }}" \
+                 --recurse-submodules --shallow-submodules \
+                 https://github.com/libjxl/libjxl.git \
+                 libjxl-src; then
+              echo "Clone succeeded"
+              exit 0
+            fi
+            echo "Clone failed, cleaning up and retrying in 15s..."
+            rm -rf libjxl-src
+            sleep 15
+          done
+          echo "::error::Failed to clone libjxl after 3 attempts"
+          exit 1
 
       # ── Platform toolchain setup ───────────────────────────────────────
       - name: Install build tools (Linux)
@@ -67,7 +78,7 @@ jobs:
 
       - name: Install build tools (macOS)
         if: runner.os == 'macOS'
-        run: brew install cmake ninja nasm
+        run: brew install cmake ninja nasm llvm
 
       - name: Setup MSVC (Windows)
         if: runner.os == 'Windows'
