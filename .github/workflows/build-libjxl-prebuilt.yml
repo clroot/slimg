@@ -160,11 +160,18 @@ jobs:
         shell: bash
         run: echo "LIBCLANG_PATH=$(brew --prefix llvm)/lib" >> $GITHUB_ENV
 
+      - name: Set LIBCLANG_PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: echo "LIBCLANG_PATH=C:/Program Files/LLVM/lib" >> $GITHUB_ENV
+
+      - name: Install bindgen-cli
+        shell: bash
+        run: cargo install bindgen-cli
+
       - name: Generate bindings.rs
         shell: bash
         run: |
-          cargo install bindgen-cli --locked --quiet 2>/dev/null || true
-
           SRC_INCLUDE="libjxl-src/lib/include"
           INSTALL_INCLUDE="libjxl-install/include"
 
