@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Sidebar, type Feature } from "@/components/Sidebar";
 import { DropZone } from "@/components/DropZone";
-import { api, type ImageInfo } from "@/lib/tauri";
+import { OptionsPanel } from "@/components/OptionsPanel";
+import { Separator } from "@/components/ui/separator";
+import { api, type ImageInfo, type ProcessOptions } from "@/lib/tauri";
 
 interface LoadedFile {
   path: string;
@@ -20,6 +22,8 @@ function App() {
   const [files, setFiles] = useState<LoadedFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Options will be consumed when processing images (Task 7)
+  const [_options, setOptions] = useState<Partial<ProcessOptions>>({});
 
   const handleFilesSelected = async (paths: string[]) => {
     setLoading(true);
@@ -108,32 +112,42 @@ function App() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {files.map((file) => (
-                  <div
-                    key={file.path}
-                    className="overflow-hidden rounded-xl border bg-card"
-                  >
-                    <div className="flex aspect-video items-center justify-center bg-muted">
-                      <img
-                        src={`data:image/png;base64,${file.info.thumbnail_base64}`}
-                        alt={file.path.split("/").pop() ?? "image"}
-                        className="max-h-full max-w-full object-contain"
-                      />
+              <>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {files.map((file) => (
+                    <div
+                      key={file.path}
+                      className="overflow-hidden rounded-xl border bg-card"
+                    >
+                      <div className="flex aspect-video items-center justify-center bg-muted">
+                        <img
+                          src={`data:image/png;base64,${file.info.thumbnail_base64}`}
+                          alt={file.path.split("/").pop() ?? "image"}
+                          className="max-h-full max-w-full object-contain"
+                        />
+                      </div>
+                      <div className="p-4">
+                        <p className="truncate text-sm font-medium">
+                          {file.path.split("/").pop()}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {file.info.width} x {file.info.height} &middot;{" "}
+                          {file.info.format.toUpperCase()} &middot;{" "}
+                          {formatBytes(file.info.size_bytes)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="p-4">
-                      <p className="truncate text-sm font-medium">
-                        {file.path.split("/").pop()}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {file.info.width} x {file.info.height} &middot;{" "}
-                        {file.info.format.toUpperCase()} &middot;{" "}
-                        {formatBytes(file.info.size_bytes)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+                <Separator className="my-6" />
+                <div className="max-w-md">
+                  <OptionsPanel
+                    feature={activeFeature}
+                    imageInfo={files[0]?.info}
+                    onChange={setOptions}
+                  />
+                </div>
+              </>
             )}
           </div>
         )}
