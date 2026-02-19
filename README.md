@@ -1,5 +1,12 @@
 # slimg
 
+[![CI](https://github.com/clroot/slimg/actions/workflows/release.yml/badge.svg)](https://github.com/clroot/slimg/actions/workflows/release.yml)
+[![Crates.io](https://img.shields.io/crates/v/slimg)](https://crates.io/crates/slimg)
+[![PyPI](https://img.shields.io/pypi/v/slimg)](https://pypi.org/project/slimg/)
+[![Maven Central](https://img.shields.io/maven-central/v/io.clroot.slimg/slimg-kotlin)](https://central.sonatype.com/artifact/io.clroot.slimg/slimg-kotlin)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![MSRV](https://img.shields.io/badge/MSRV-1.85+-orange.svg)](https://www.rust-lang.org)
+
 A fast image optimization CLI. Convert, compress, resize, crop, and extend images using modern codecs.
 
 [한국어](./README.ko.md)
