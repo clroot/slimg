@@ -1,6 +1,6 @@
 [package]
 name = "slimg-core"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2024"
 license = "MIT"
 description = "Image optimization library — encode, decode, convert, resize with MozJPEG, OxiPNG, WebP, AVIF, and QOI"

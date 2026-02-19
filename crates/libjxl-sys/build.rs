@@ -42,6 +42,7 @@ fn main() {
 #[cfg(feature = "vendored")]
 fn build_vendored() {
     let dst = cmake::Config::new("libjxl")
+        .profile("Release")
         .define("BUILD_TESTING", "OFF")
         .define("BUILD_SHARED_LIBS", "OFF")
         .define("JPEGXL_ENABLE_TOOLS", "OFF")

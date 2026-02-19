@@ -48,12 +48,12 @@ class SlimgTest {
     }
 
     @Test
-    fun `formatCanEncode returns false only for JXL`() {
+    fun `formatCanEncode returns true for all formats`() {
         assertTrue(formatCanEncode(Format.JPEG))
         assertTrue(formatCanEncode(Format.PNG))
         assertTrue(formatCanEncode(Format.WEB_P))
         assertTrue(formatCanEncode(Format.AVIF))
-        assertFalse(formatCanEncode(Format.JXL))
+        assertTrue(formatCanEncode(Format.JXL))
         assertTrue(formatCanEncode(Format.QOI))
     }
 

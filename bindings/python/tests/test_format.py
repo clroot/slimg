@@ -32,8 +32,8 @@ class TestFormatCanEncode:
     def test_webp_can_encode(self):
         assert slimg.Format.WEBP.can_encode is True
 
-    def test_jxl_cannot_encode(self):
-        assert slimg.Format.JXL.can_encode is False
+    def test_jxl_can_encode(self):
+        assert slimg.Format.JXL.can_encode is True
 
 
 class TestFormatFromPath:
