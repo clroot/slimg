@@ -1,10 +1,11 @@
 [package]
-name = "libjxl-sys"
+name = "slimg-libjxl-sys"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
 description = "Minimal FFI bindings to libjxl encoder/decoder (vendored, BSD-3-Clause)"
-publish = false
+repository = "https://github.com/clroot/slimg"
+homepage = "https://github.com/clroot/slimg"
 links = "jxl"
 
 [build-dependencies]

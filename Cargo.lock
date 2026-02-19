@@ -1112,15 +1112,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "libjxl-sys"
-version = "0.1.0"
-dependencies = [
- "bindgen",
- "cc",
- "cmake",
-]
-
-[[package]]
 name = "libloading"
 version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1863,12 +1854,12 @@ dependencies = [
  "criterion",
  "image",
  "imgref",
- "libjxl-sys",
  "mozjpeg",
  "oxipng",
  "rapid-qoi",
  "ravif 0.13.0",
  "rgb",
+ "slimg-libjxl-sys",
  "thiserror",
  "webp",
 ]
@@ -1880,6 +1871,15 @@ dependencies = [
  "slimg-core",
  "thiserror",
  "uniffi",
+]
+
+[[package]]
+name = "slimg-libjxl-sys"
+version = "0.1.0"
+dependencies = [
+ "bindgen",
+ "cc",
+ "cmake",
 ]
 
 [[package]]

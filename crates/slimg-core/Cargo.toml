@@ -12,7 +12,7 @@ categories = ["multimedia::images", "encoding"]
 
 [dependencies]
 image = { version = "0.25", features = ["avif-native"] }
-libjxl-sys = { path = "../libjxl-sys" }
+libjxl-sys = { version = "0.1", path = "../libjxl-sys", package = "slimg-libjxl-sys" }
 mozjpeg = "0.10"
 oxipng = { version = "10", default-features = false, features = ["parallel", "zopfli"] }
 imgref = "1"
