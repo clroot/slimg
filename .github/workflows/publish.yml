@@ -22,10 +22,55 @@ permissions:
 
 jobs:
   # ─────────────────────────────────────────────
+  # Check if versions are already published
+  # ─────────────────────────────────────────────
+  check-versions:
+    name: Check published versions
+    runs-on: ubuntu-latest
+    outputs:
+      crates-published: ${{ steps.check.outputs.crates }}
+      maven-published: ${{ steps.check.outputs.maven }}
+      pypi-published: ${{ steps.check.outputs.pypi }}
+    steps:
+      - id: check
+        run: |
+          RELEASE_VERSION="${VERSION#v}"
+
+          # Check crates.io
+          if curl -sf "https://crates.io/api/v1/crates/slimg/$RELEASE_VERSION" > /dev/null 2>&1; then
+            echo "crates=true" >> $GITHUB_OUTPUT
+            echo "✅ crates.io: slimg@$RELEASE_VERSION already published"
+          else
+            echo "crates=false" >> $GITHUB_OUTPUT
+            echo "⏳ crates.io: slimg@$RELEASE_VERSION not found, will publish"
+          fi
+
+          # Check Maven Central
+          MAVEN_URL="https://repo1.maven.org/maven2/io/clroot/slimg/slimg-kotlin/$RELEASE_VERSION/slimg-kotlin-$RELEASE_VERSION.pom"
+          if curl -sf "$MAVEN_URL" > /dev/null 2>&1; then
+            echo "maven=true" >> $GITHUB_OUTPUT
+            echo "✅ Maven Central: slimg-kotlin@$RELEASE_VERSION already published"
+          else
+            echo "maven=false" >> $GITHUB_OUTPUT
+            echo "⏳ Maven Central: slimg-kotlin@$RELEASE_VERSION not found, will publish"
+          fi
+
+          # Check PyPI
+          if curl -sf "https://pypi.org/pypi/slimg/$RELEASE_VERSION/json" > /dev/null 2>&1; then
+            echo "pypi=true" >> $GITHUB_OUTPUT
+            echo "✅ PyPI: slimg@$RELEASE_VERSION already published"
+          else
+            echo "pypi=false" >> $GITHUB_OUTPUT
+            echo "⏳ PyPI: slimg@$RELEASE_VERSION not found, will publish"
+          fi
+
+  # ─────────────────────────────────────────────
   # Publish to crates.io (slimg-core → slimg)
   # ─────────────────────────────────────────────
   publish-crates:
     name: Publish to crates.io
+    needs: [check-versions]
+    if: needs.check-versions.outputs.crates-published != 'true'
     runs-on: ubuntu-latest
     env:
       SYSTEM_DEPS_DAV1D_BUILD_INTERNAL: always
@@ -126,6 +171,8 @@ jobs:
   # ─────────────────────────────────────────────
   build-kotlin-native:
     name: Build native (${{ matrix.target }})
+    needs: [check-versions]
+    if: needs.check-versions.outputs.maven-published != 'true'
     runs-on: ${{ matrix.runner }}
     env:
       SYSTEM_DEPS_DAV1D_BUILD_INTERNAL: always
@@ -209,6 +256,8 @@ jobs:
   # ─────────────────────────────────────────────
   generate-kotlin-bindings:
     name: Generate Kotlin bindings
+    needs: [check-versions]
+    if: needs.check-versions.outputs.maven-published != 'true'
     runs-on: macos-latest
     env:
       SYSTEM_DEPS_DAV1D_BUILD_INTERNAL: always
@@ -322,6 +371,8 @@ jobs:
   # ─────────────────────────────────────────────
   build-python-wheels:
     name: Build Python wheel (${{ matrix.target }})
+    needs: [check-versions]
+    if: needs.check-versions.outputs.pypi-published != 'true'
     runs-on: ${{ matrix.runner }}
     env:
       SYSTEM_DEPS_DAV1D_BUILD_INTERNAL: always
@@ -385,6 +436,8 @@ jobs:
   # ─────────────────────────────────────────────
   build-python-sdist:
     name: Build Python sdist
+    needs: [check-versions]
+    if: needs.check-versions.outputs.pypi-published != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -406,6 +459,8 @@ jobs:
   # ─────────────────────────────────────────────
   verify-python-version:
     name: Verify Python package version
+    needs: [check-versions]
+    if: needs.check-versions.outputs.pypi-published != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
