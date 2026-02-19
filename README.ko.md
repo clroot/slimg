@@ -11,9 +11,9 @@
 | JPEG | O | O | MozJPEG 인코더로 뛰어난 압축률 |
 | PNG | O | O | OxiPNG + Zopfli 압축 |
 | WebP | O | O | libwebp 기반 손실 압축 |
-| AVIF | macOS만 | O | ravif 인코더 (AV1 기반); 디코딩에 dav1d 필요 (macOS Homebrew) |
+| AVIF | O | O | ravif 인코더; dav1d 디코더 (정적 링크) |
 | QOI | O | O | 무손실, 빠른 인코딩/디코딩 |
-| JPEG XL | O | X | 디코딩만 지원 (GPL 라이선스 제한) |
+| JPEG XL | O | O | libjxl 인코더/디코더 |
 
 ## 설치
 
@@ -54,7 +54,8 @@ cargo install --path cli
 - Rust 1.85+ (edition 2024)
 - C 컴파일러 (cc)
 - nasm (MozJPEG / rav1e 어셈블리 최적화용)
-- dav1d (macOS만, AVIF 디코딩용)
+- meson + ninja (dav1d AVIF 디코더 소스 빌드용)
+- `SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always` 설정으로 dav1d를 소스에서 빌드
 
 ## 사용법
 

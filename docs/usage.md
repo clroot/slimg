@@ -14,7 +14,7 @@ slimg convert photo.jpg --format webp
 
 | Option | Description |
 |--------|-------------|
-| `--format`, `-f` | Target format: `jpeg`, `png`, `webp`, `avif`, `qoi` |
+| `--format`, `-f` | Target format: `jpeg`, `png`, `webp`, `avif`, `jxl`, `qoi` |
 | `--quality`, `-q` | Encoding quality 0-100 (default: 80) |
 | `--output`, `-o` | Output path (file or directory) |
 | `--recursive` | Process subdirectories |

@@ -13,7 +13,7 @@ A fast image optimization CLI. Convert, compress, resize, crop, and extend image
 | WebP   | Yes    | Yes    | Lossy encoding via libwebp |
 | AVIF   | Yes    | Yes    | ravif encoder; dav1d decoder (statically linked) |
 | QOI    | Yes    | Yes    | Lossless, fast encode/decode |
-| JPEG XL| Yes    | No     | Decode-only (GPL license restriction) |
+| JPEG XL| Yes    | Yes    | libjxl encoder/decoder |
 
 ## Installation
 
