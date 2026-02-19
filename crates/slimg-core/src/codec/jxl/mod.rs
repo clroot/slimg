@@ -1,3 +1,6 @@
+mod encoder;
+mod types;
+
 use crate::error::{Error, Result};
 use crate::format::Format;
 

@@ -44,6 +44,7 @@ fn main() {
     // bindgen
     let include_dir = dst.join("include");
     let src_include = PathBuf::from("libjxl/lib/include");
+    let target = env::var("TARGET").unwrap();
 
     let bindings = bindgen::Builder::default()
         .header(src_include.join("jxl/encode.h").to_str().unwrap())
@@ -52,6 +53,7 @@ fn main() {
         .header(src_include.join("jxl/color_encoding.h").to_str().unwrap())
         .clang_arg(format!("-I{}", src_include.display()))
         .clang_arg(format!("-I{}", include_dir.display()))
+        .clang_arg(format!("--target={target}"))
         // Encoder functions only
         .allowlist_function("JxlEncoderCreate")
         .allowlist_function("JxlEncoderDestroy")
