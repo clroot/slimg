@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Sidebar, type Feature } from "@/components/Sidebar";
 import { DropZone } from "@/components/DropZone";
+import { ImagePreview } from "@/components/ImagePreview";
 import { OptionsPanel } from "@/components/OptionsPanel";
 import { ProcessResultCard } from "@/components/ProcessResultCard";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ function App() {
   const {
     processing,
     result,
+    resultInfo,
     error: processError,
     processImage,
     reset: resetResult,
@@ -101,9 +103,11 @@ function App() {
                   {activeFeature}
                 </h1>
                 <p className="mt-1 text-muted-foreground">
-                  {files.length > 0
-                    ? `${files.length} image${files.length > 1 ? "s" : ""} loaded`
-                    : `Select images to ${activeFeature}`}
+                  {result
+                    ? "Processing complete"
+                    : files.length > 0
+                      ? `${files.length} image${files.length > 1 ? "s" : ""} loaded`
+                      : `Select images to ${activeFeature}`}
                 </p>
               </div>
               {files.length > 0 && (
@@ -133,6 +137,35 @@ function App() {
                       {error}
                     </p>
                   )}
+                </div>
+              </div>
+            ) : result ? (
+              <div className="space-y-6">
+                <ImagePreview
+                  original={files[0]}
+                  result={result}
+                  resultInfo={resultInfo ?? undefined}
+                />
+
+                <ProcessResultCard result={result} />
+
+                <div className="flex gap-4">
+                  <Button
+                    variant="outline"
+                    onClick={resetResult}
+                    className="flex-1"
+                    size="lg"
+                  >
+                    Process Again
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleClearFiles}
+                    className="flex-1"
+                    size="lg"
+                  >
+                    Clear
+                  </Button>
                 </div>
               </div>
             ) : (
@@ -191,8 +224,6 @@ function App() {
                       </p>
                     </div>
                   )}
-
-                  {result && <ProcessResultCard result={result} />}
                 </div>
               </>
             )}
