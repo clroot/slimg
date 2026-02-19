@@ -470,9 +470,6 @@ jobs:
     name: Publish to PyPI
     needs: [build-python-wheels, build-python-sdist, verify-python-version, smoke-test-python]
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-    environment: pypi
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -489,3 +486,4 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
+          password: ${{ secrets.PYPI_API_TOKEN }}
