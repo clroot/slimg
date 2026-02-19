@@ -1,5 +1,12 @@
 # slimg
 
+[![CI](https://github.com/clroot/slimg/actions/workflows/release.yml/badge.svg)](https://github.com/clroot/slimg/actions/workflows/release.yml)
+[![Crates.io](https://img.shields.io/crates/v/slimg)](https://crates.io/crates/slimg)
+[![PyPI](https://img.shields.io/pypi/v/slimg)](https://pypi.org/project/slimg/)
+[![Maven Central](https://img.shields.io/maven-central/v/io.clroot.slimg/slimg-kotlin)](https://central.sonatype.com/artifact/io.clroot.slimg/slimg-kotlin)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![MSRV](https://img.shields.io/badge/MSRV-1.85+-orange.svg)](https://www.rust-lang.org)
+
 빠른 이미지 최적화 CLI. 최신 코덱을 사용하여 이미지를 변환, 압축, 리사이즈, 크롭, 확장합니다.
 
 [English](./README.md)
