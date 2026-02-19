@@ -5,10 +5,12 @@ import { ImagePreview } from "@/components/ImagePreview";
 import { OptionsPanel } from "@/components/OptionsPanel";
 import { ProcessResultCard } from "@/components/ProcessResultCard";
 import { BatchList } from "@/components/BatchList";
+import { Settings } from "@/components/Settings";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useImageProcess } from "@/hooks/useImageProcess";
 import { useBatchProcess } from "@/hooks/useBatchProcess";
+import { useSettings } from "@/hooks/useSettings";
 import { formatBytes } from "@/lib/format";
 import { basename, capitalize } from "@/lib/path";
 import { api, type ImageInfo, type ProcessOptions } from "@/lib/tauri";
@@ -40,6 +42,7 @@ function App() {
     processBatch,
     reset: resetBatch,
   } = useBatchProcess();
+  const { settings, updateSettings, resetSettings } = useSettings();
   const [selectedBatchIndex, setSelectedBatchIndex] = useState<
     number | undefined
   >(undefined);
@@ -48,10 +51,11 @@ function App() {
   const hasBatchResult = batchItems.length > 0;
 
   const buildOptions = (): ProcessOptions => ({
-    quality: 80,
+    quality: settings.defaultQuality,
+    overwrite: settings.overwrite,
+    ...(settings.outputDir ? { output_dir: settings.outputDir } : {}),
     ...options,
     operation: activeFeature,
-    overwrite: false,
   });
 
   const handleProcess = async () => {
@@ -125,12 +129,11 @@ function App() {
       />
       <main className="flex-1 overflow-auto p-6">
         {showSettings ? (
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-            <p className="mt-1 text-muted-foreground">
-              Application settings (TODO)
-            </p>
-          </div>
+          <Settings
+            settings={settings}
+            onUpdate={updateSettings}
+            onReset={resetSettings}
+          />
         ) : (
           <div className="flex h-full flex-col">
             <div className="mb-6 flex items-center justify-between">
