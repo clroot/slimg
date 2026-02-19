@@ -1,0 +1,7 @@
+export function basename(filePath: string): string {
+  return filePath.split(/[\\/]/).pop() ?? filePath;
+}
+
+export function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}

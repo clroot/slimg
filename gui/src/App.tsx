@@ -2,7 +2,11 @@ import { useState } from "react";
 import { Sidebar, type Feature } from "@/components/Sidebar";
 import { DropZone } from "@/components/DropZone";
 import { OptionsPanel } from "@/components/OptionsPanel";
+import { ProcessResultCard } from "@/components/ProcessResultCard";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useImageProcess } from "@/hooks/useImageProcess";
+import { basename, capitalize } from "@/lib/path";
 import { api, type ImageInfo, type ProcessOptions } from "@/lib/tauri";
 
 interface LoadedFile {
@@ -22,8 +26,25 @@ function App() {
   const [files, setFiles] = useState<LoadedFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Options will be consumed when processing images (Task 7)
-  const [_options, setOptions] = useState<Partial<ProcessOptions>>({});
+  const [options, setOptions] = useState<Partial<ProcessOptions>>({});
+  const {
+    processing,
+    result,
+    error: processError,
+    processImage,
+    reset: resetResult,
+  } = useImageProcess();
+
+  const handleProcess = async () => {
+    if (files.length === 0) return;
+    const fullOptions: ProcessOptions = {
+      quality: 80,
+      ...options,
+      operation: activeFeature,
+      overwrite: false,
+    };
+    await processImage(files[0].path, fullOptions);
+  };
 
   const handleFilesSelected = async (paths: string[]) => {
     setLoading(true);
@@ -49,6 +70,7 @@ function App() {
   const handleClearFiles = () => {
     setFiles([]);
     setError(null);
+    resetResult();
   };
 
   return (
@@ -58,6 +80,8 @@ function App() {
         onSelect={(feature) => {
           setActiveFeature(feature);
           setShowSettings(false);
+          setOptions({});
+          resetResult();
         }}
         onSettingsClick={() => setShowSettings(true)}
       />
@@ -122,13 +146,13 @@ function App() {
                       <div className="flex aspect-video items-center justify-center bg-muted">
                         <img
                           src={`data:image/png;base64,${file.info.thumbnail_base64}`}
-                          alt={file.path.split("/").pop() ?? "image"}
+                          alt={basename(file.path)}
                           className="max-h-full max-w-full object-contain"
                         />
                       </div>
                       <div className="p-4">
                         <p className="truncate text-sm font-medium">
-                          {file.path.split("/").pop()}
+                          {basename(file.path)}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
                           {file.info.width} x {file.info.height} &middot;{" "}
@@ -140,12 +164,35 @@ function App() {
                   ))}
                 </div>
                 <Separator className="my-6" />
-                <div className="max-w-md">
+                <div className="max-w-md space-y-6">
                   <OptionsPanel
                     feature={activeFeature}
                     imageInfo={files[0]?.info}
                     onChange={setOptions}
                   />
+                  <Button
+                    onClick={handleProcess}
+                    disabled={processing}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {processing
+                      ? "Processing..."
+                      : `${capitalize(activeFeature)} Image`}
+                  </Button>
+
+                  {processError && (
+                    <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+                      <p className="text-sm font-medium text-destructive">
+                        Error
+                      </p>
+                      <p className="mt-1 text-sm text-destructive/90">
+                        {processError}
+                      </p>
+                    </div>
+                  )}
+
+                  {result && <ProcessResultCard result={result} />}
                 </div>
               </>
             )}
