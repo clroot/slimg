@@ -1,6 +1,6 @@
 [package]
 name = "slimg"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2024"
 license = "MIT"
 description = "Image optimization CLI — convert, compress, and resize images using MozJPEG, OxiPNG, WebP, AVIF, and QOI"
@@ -11,7 +11,7 @@ keywords = ["image", "optimization", "cli", "compression", "webp"]
 categories = ["multimedia::images", "command-line-utilities"]
 
 [dependencies]
-slimg-core = { version = "0.4.0", path = "../crates/slimg-core" }
+slimg-core = { version = "0.5.0", path = "../crates/slimg-core" }
 clap = { version = "4.5", features = ["derive"] }
 clap_complete = "4.5"
 anyhow = "1"
