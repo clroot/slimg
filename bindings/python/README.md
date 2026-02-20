@@ -56,7 +56,7 @@ extended = slimg.extend(image, aspect_ratio=(1, 1))
 | WebP     | Yes    | Yes    | Lossy encoding via libwebp |
 | AVIF     | Yes    | Yes    | ravif encoder; dav1d decoder |
 | QOI      | Yes    | Yes    | Lossless, fast encode/decode |
-| JPEG XL  | Yes    | No     | Decode-only |
+| JPEG XL  | Yes    | Yes    | libjxl encoder/decoder |
 
 ## API Reference
 
