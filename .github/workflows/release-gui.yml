@@ -1,0 +1,114 @@
+name: Release GUI
+
+on:
+  push:
+    tags:
+      - 'gui-v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-tauri:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: --target aarch64-apple-darwin
+          - platform: macos-13
+            args: --target x86_64-apple-darwin
+          - platform: ubuntu-22.04
+            args: ''
+          - platform: windows-latest
+            args: ''
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: oven-sh/setup-bun@v2
+
+      # ── Linux dependencies ──────────────────────────────────
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            cmake \
+            meson \
+            nasm
+
+      # ── macOS dependencies ──────────────────────────────────
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install meson nasm
+
+      # ── Windows dependencies ────────────────────────────────
+      - name: Setup MSVC (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Remove conflicting link.exe (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: rm -f /usr/bin/link
+
+      - name: Add NASM to PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: echo "C:/Program Files/NASM" >> $GITHUB_PATH
+
+      - name: Install meson and pkg-config (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          pip install meson
+          choco install pkgconfiglite --yes
+
+      - name: Force MSVC compiler (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          echo "CC=cl" >> $GITHUB_ENV
+          echo "CXX=cl" >> $GITHUB_ENV
+          echo "_CL_=/MT" >> $GITHUB_ENV
+
+      # ── Common build flags ──────────────────────────────────
+      - name: Set dav1d build-from-source
+        shell: bash
+        run: echo "SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always" >> $GITHUB_ENV
+
+      # ── Frontend ────────────────────────────────────────────
+      - name: Install frontend dependencies
+        working-directory: gui
+        run: bun install
+
+      # ── Build & Release ─────────────────────────────────────
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: gui
+          tauriScript: bun run tauri
+          args: ${{ matrix.args }}
+          tagName: gui-v__VERSION__
+          releaseName: 'slimg GUI v__VERSION__'
+          releaseBody: 'Download the installer for your platform below.'
+          releaseDraft: true
+          prerelease: false
