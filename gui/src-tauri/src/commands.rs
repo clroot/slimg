@@ -100,10 +100,11 @@ fn collect_images(dir: &Path, out: &mut Vec<String>) -> Result<(), String> {
     let entries = std::fs::read_dir(dir).map_err(|e| e.to_string())?;
     for entry in entries {
         let entry = entry.map_err(|e| e.to_string())?;
+        let file_type = entry.file_type().map_err(|e| e.to_string())?;
         let path = entry.path();
-        if path.is_dir() {
+        if file_type.is_dir() {
             collect_images(&path, out)?;
-        } else if Format::from_extension(&path).is_some() {
+        } else if file_type.is_file() && Format::from_extension(&path).is_some() {
             out.push(path.to_string_lossy().to_string());
         }
     }
@@ -168,16 +169,13 @@ pub async fn preview_image(input: String, options: ProcessOptions) -> Result<Pre
             slimg_core::convert(&image, &pipeline_options).map_err(|e| e.to_string())?
         };
 
-        let (decoded_result, _) =
-            slimg_core::decode(&pipeline_result.data).map_err(|e| e.to_string())?;
-
         let data_base64 = BASE64.encode(&pipeline_result.data);
 
         Ok(PreviewResult {
             data_base64,
             size_bytes: pipeline_result.data.len() as u64,
-            width: decoded_result.width,
-            height: decoded_result.height,
+            width: pipeline_result.width,
+            height: pipeline_result.height,
             format: pipeline_result.format.extension().to_string(),
         })
     })
@@ -267,15 +265,12 @@ fn process_single_file(input: &str, options: &ProcessOptions) -> Result<ProcessR
         .save(&out_path)
         .map_err(|e| e.to_string())?;
 
-    let (decoded_result, _) =
-        slimg_core::decode(&pipeline_result.data).map_err(|e| e.to_string())?;
-
     Ok(ProcessResult {
         output_path: out_path.to_string_lossy().to_string(),
         original_size,
         new_size: pipeline_result.data.len() as u64,
-        width: decoded_result.width,
-        height: decoded_result.height,
+        width: pipeline_result.width,
+        height: pipeline_result.height,
         format: pipeline_result.format.extension().to_string(),
     })
 }

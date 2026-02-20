@@ -81,15 +81,21 @@ function App() {
   };
 
   const handleFilesSelected = useCallback(async (paths: string[]) => {
+    const CONCURRENCY = 5;
     setLoading(true);
     setError(null);
     try {
-      const loaded = await Promise.all(
-        paths.map(async (path) => ({
-          path,
-          info: await api.loadImage(path),
-        }))
-      );
+      const loaded: LoadedFile[] = [];
+      for (let i = 0; i < paths.length; i += CONCURRENCY) {
+        const chunk = paths.slice(i, i + CONCURRENCY);
+        const results = await Promise.all(
+          chunk.map(async (path) => ({
+            path,
+            info: await api.loadImage(path),
+          }))
+        );
+        loaded.push(...results);
+      }
       setFiles(loaded);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
