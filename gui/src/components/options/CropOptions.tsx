@@ -52,6 +52,7 @@ export function CropOptions({ onChange }: CropOptionsProps) {
 
   useEffect(() => {
     emitChange({ cropMode, x, y, width, height, format, quality });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- emit initial values on mount only
   }, []);
 
   const handleCropModeChange = (value: string) => {

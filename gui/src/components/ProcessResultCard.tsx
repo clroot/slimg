@@ -1,12 +1,12 @@
 import type { ProcessResult } from "@/lib/tauri";
-import { formatBytes } from "@/lib/format";
+import { formatBytes, calcSavingsPercent } from "@/lib/format";
 import { basename } from "@/lib/path";
 
 export function ProcessResultCard({ result }: { result: ProcessResult }) {
-  const savingsPercent =
-    result.original_size > 0
-      ? (1 - result.new_size / result.original_size) * 100
-      : 0;
+  const savingsPercent = calcSavingsPercent(
+    result.original_size,
+    result.new_size
+  );
   const isSizeReduced = savingsPercent > 0;
 
   return (

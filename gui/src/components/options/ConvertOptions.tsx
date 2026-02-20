@@ -23,6 +23,7 @@ export function ConvertOptions({ onChange }: ConvertOptionsProps) {
 
   useEffect(() => {
     emitChange(format, quality);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- emit initial values on mount only
   }, []);
 
   const handleFormatChange = (value: string) => {

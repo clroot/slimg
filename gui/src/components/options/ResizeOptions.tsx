@@ -3,7 +3,6 @@ import type { ProcessOptions, ImageInfo } from "@/lib/tauri";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
 import { FormatSelect } from "./FormatSelect";
 import { QualitySlider } from "./QualitySlider";
 
@@ -27,7 +26,6 @@ export function ResizeOptions({ onChange, imageInfo }: ResizeOptionsProps) {
   const [resizeMode, setResizeMode] = useState<ResizeMode>("width");
   const [width, setWidth] = useState<number | undefined>(undefined);
   const [height, setHeight] = useState<number | undefined>(undefined);
-  const [maintainAspect, setMaintainAspect] = useState(true);
   const [format, setFormat] = useState("same");
   const [quality, setQuality] = useState(DEFAULT_QUALITY);
 
@@ -54,6 +52,7 @@ export function ResizeOptions({ onChange, imageInfo }: ResizeOptionsProps) {
 
   useEffect(() => {
     emitChange({ resizeMode, width, height, format, quality });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- emit initial values on mount only
   }, []);
 
   const handleResizeModeChange = (value: string) => {
@@ -132,16 +131,6 @@ export function ResizeOptions({ onChange, imageInfo }: ResizeOptionsProps) {
           />
         </div>
       </div>
-
-      <label className="flex cursor-pointer items-center gap-2">
-        <Checkbox
-          checked={maintainAspect}
-          onCheckedChange={(checked) =>
-            setMaintainAspect(checked === true)
-          }
-        />
-        <span className="text-sm">Maintain aspect ratio</span>
-      </label>
 
       <FormatSelect
         value={format}

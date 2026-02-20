@@ -1,6 +1,6 @@
 import { CheckCircle2, XCircle, Loader2, Circle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { formatBytes } from "@/lib/format";
+import { formatBytes, calcSavingsPercent } from "@/lib/format";
 import { basename } from "@/lib/path";
 import type { BatchItem } from "@/hooks/useBatchProcess";
 import { cn } from "@/lib/utils";
@@ -34,8 +34,7 @@ function SizeChange({
   originalSize: number;
   newSize: number;
 }) {
-  const savingsPercent =
-    originalSize > 0 ? (1 - newSize / originalSize) * 100 : 0;
+  const savingsPercent = calcSavingsPercent(originalSize, newSize);
   const isSizeReduced = savingsPercent > 0;
 
   return (

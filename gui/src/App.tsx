@@ -80,7 +80,7 @@ function App() {
     }
   };
 
-  const handleFilesSelected = async (paths: string[]) => {
+  const handleFilesSelected = useCallback(async (paths: string[]) => {
     setLoading(true);
     setError(null);
     try {
@@ -98,7 +98,7 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleClearFiles = () => {
     setFiles([]);

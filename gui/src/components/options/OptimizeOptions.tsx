@@ -20,6 +20,7 @@ export function OptimizeOptions({ onChange }: OptimizeOptionsProps) {
 
   useEffect(() => {
     emitChange(quality);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- emit initial values on mount only
   }, []);
 
   const handleQualityChange = (value: number) => {

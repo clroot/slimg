@@ -42,6 +42,7 @@ export function ExtendOptions({ onChange }: ExtendOptionsProps) {
 
   useEffect(() => {
     emitChange({ width, height, fillColor, format, quality });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- emit initial values on mount only
   }, []);
 
   const handleWidthChange = (value: string) => {
