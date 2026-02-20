@@ -84,68 +84,105 @@ pub struct BatchProgress {
 // ── Commands ───────────────────────────────────────────────────
 
 #[tauri::command]
-pub fn load_image(path: String) -> Result<ImageInfo, String> {
-    let file_path = Path::new(&path);
-
-    if Format::from_extension(file_path).is_none() {
-        let ext = file_path.extension().and_then(|e| e.to_str()).unwrap_or("");
-        return Err(format!("Unsupported file type: {}", ext));
+pub fn scan_directory(path: String) -> Result<Vec<String>, String> {
+    let dir_path = Path::new(&path);
+    if !dir_path.is_dir() {
+        return Err(format!("Not a directory: {}", path));
     }
 
-    let raw_bytes = std::fs::read(file_path).map_err(|e| e.to_string())?;
-    let size_bytes = raw_bytes.len() as u64;
+    let mut files = Vec::new();
+    collect_images(dir_path, &mut files)?;
+    files.sort();
+    Ok(files)
+}
 
-    let (image, format) = slimg_core::decode(&raw_bytes).map_err(|e| e.to_string())?;
-
-    let thumbnail = slimg_core::resize::resize(
-        &image,
-        &ResizeMode::Fit(THUMBNAIL_MAX_DIMENSION, THUMBNAIL_MAX_DIMENSION),
-    )
-    .map_err(|e| e.to_string())?;
-
-    let png_bytes = encode_as_png(&thumbnail)?;
-    let thumbnail_base64 = BASE64.encode(&png_bytes);
-
-    Ok(ImageInfo {
-        width: image.width,
-        height: image.height,
-        format: format.extension().to_string(),
-        size_bytes,
-        thumbnail_base64,
-    })
+fn collect_images(dir: &Path, out: &mut Vec<String>) -> Result<(), String> {
+    let entries = std::fs::read_dir(dir).map_err(|e| e.to_string())?;
+    for entry in entries {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let path = entry.path();
+        if path.is_dir() {
+            collect_images(&path, out)?;
+        } else if Format::from_extension(&path).is_some() {
+            out.push(path.to_string_lossy().to_string());
+        }
+    }
+    Ok(())
 }
 
 #[tauri::command]
-pub fn process_image(input: String, options: ProcessOptions) -> Result<ProcessResult, String> {
-    process_single_file(&input, &options)
+pub async fn load_image(path: String) -> Result<ImageInfo, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let file_path = Path::new(&path);
+
+        if Format::from_extension(file_path).is_none() {
+            let ext = file_path.extension().and_then(|e| e.to_str()).unwrap_or("");
+            return Err(format!("Unsupported file type: {}", ext));
+        }
+
+        let raw_bytes = std::fs::read(file_path).map_err(|e| e.to_string())?;
+        let size_bytes = raw_bytes.len() as u64;
+
+        let (image, format) = slimg_core::decode(&raw_bytes).map_err(|e| e.to_string())?;
+
+        let thumbnail = slimg_core::resize::resize(
+            &image,
+            &ResizeMode::Fit(THUMBNAIL_MAX_DIMENSION, THUMBNAIL_MAX_DIMENSION),
+        )
+        .map_err(|e| e.to_string())?;
+
+        let png_bytes = encode_as_png(&thumbnail)?;
+        let thumbnail_base64 = BASE64.encode(&png_bytes);
+
+        Ok(ImageInfo {
+            width: image.width,
+            height: image.height,
+            format: format.extension().to_string(),
+            size_bytes,
+            thumbnail_base64,
+        })
+    })
+    .await
+    .map_err(|e| format!("Task failed: {}", e))?
 }
 
 #[tauri::command]
-pub fn preview_image(input: String, options: ProcessOptions) -> Result<PreviewResult, String> {
-    let input_path = Path::new(&input);
+pub async fn process_image(input: String, options: ProcessOptions) -> Result<ProcessResult, String> {
+    tauri::async_runtime::spawn_blocking(move || process_single_file(&input, &options))
+        .await
+        .map_err(|e| format!("Task failed: {}", e))?
+}
 
-    let raw_bytes = std::fs::read(input_path).map_err(|e| e.to_string())?;
-    let (image, source_format) = slimg_core::decode(&raw_bytes).map_err(|e| e.to_string())?;
+#[tauri::command]
+pub async fn preview_image(input: String, options: ProcessOptions) -> Result<PreviewResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let input_path = Path::new(&input);
 
-    let pipeline_result = if matches!(options.operation, Operation::Optimize) {
-        slimg_core::optimize(&raw_bytes, options.quality).map_err(|e| e.to_string())?
-    } else {
-        let pipeline_options = build_pipeline_options(&options, source_format)?;
-        slimg_core::convert(&image, &pipeline_options).map_err(|e| e.to_string())?
-    };
+        let raw_bytes = std::fs::read(input_path).map_err(|e| e.to_string())?;
+        let (image, source_format) = slimg_core::decode(&raw_bytes).map_err(|e| e.to_string())?;
 
-    let (decoded_result, _) =
-        slimg_core::decode(&pipeline_result.data).map_err(|e| e.to_string())?;
+        let pipeline_result = if matches!(options.operation, Operation::Optimize) {
+            slimg_core::optimize(&raw_bytes, options.quality).map_err(|e| e.to_string())?
+        } else {
+            let pipeline_options = build_pipeline_options(&options, source_format)?;
+            slimg_core::convert(&image, &pipeline_options).map_err(|e| e.to_string())?
+        };
 
-    let data_base64 = BASE64.encode(&pipeline_result.data);
+        let (decoded_result, _) =
+            slimg_core::decode(&pipeline_result.data).map_err(|e| e.to_string())?;
 
-    Ok(PreviewResult {
-        data_base64,
-        size_bytes: pipeline_result.data.len() as u64,
-        width: decoded_result.width,
-        height: decoded_result.height,
-        format: pipeline_result.format.extension().to_string(),
+        let data_base64 = BASE64.encode(&pipeline_result.data);
+
+        Ok(PreviewResult {
+            data_base64,
+            size_bytes: pipeline_result.data.len() as u64,
+            width: decoded_result.width,
+            height: decoded_result.height,
+            format: pipeline_result.format.extension().to_string(),
+        })
     })
+    .await
+    .map_err(|e| format!("Task failed: {}", e))?
 }
 
 #[tauri::command]
@@ -167,7 +204,13 @@ pub async fn process_batch(
         };
         let _ = window.emit("batch-progress", &progress_processing);
 
-        match process_single_file(file_path, &options) {
+        let fp = file_path.clone();
+        let opts = options.clone();
+        let result = tauri::async_runtime::spawn_blocking(move || process_single_file(&fp, &opts))
+            .await
+            .map_err(|e| format!("Task failed: {}", e))?;
+
+        match result {
             Ok(result) => {
                 let progress_completed = BatchProgress {
                     index,
