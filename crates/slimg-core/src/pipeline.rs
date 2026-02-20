@@ -32,6 +32,10 @@ pub struct PipelineResult {
     pub data: Vec<u8>,
     /// Format of the encoded data.
     pub format: Format,
+    /// Width of the output image in pixels.
+    pub width: u32,
+    /// Height of the output image in pixels.
+    pub height: u32,
 }
 
 impl PipelineResult {
@@ -93,6 +97,8 @@ pub fn convert(image: &ImageData, options: &PipelineOptions) -> Result<PipelineR
     Ok(PipelineResult {
         data,
         format: options.format,
+        width: image.width,
+        height: image.height,
     })
 }
 
@@ -111,6 +117,8 @@ pub fn optimize(data: &[u8], quality: u8) -> Result<PipelineResult> {
     Ok(PipelineResult {
         data: encoded,
         format,
+        width: image.width,
+        height: image.height,
     })
 }
 

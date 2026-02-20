@@ -177,6 +177,10 @@ pub struct PipelineResult {
     pub data: Vec<u8>,
     /// Format of the encoded data.
     pub format: Format,
+    /// Width of the output image in pixels.
+    pub width: u32,
+    /// Height of the output image in pixels.
+    pub height: u32,
 }
 
 /// Result of a decode operation.
@@ -308,6 +312,8 @@ fn convert(image: &ImageData, options: &PipelineOptions) -> Result<PipelineResul
     Ok(PipelineResult {
         data: result.data,
         format: Format::from_core(result.format),
+        width: result.width,
+        height: result.height,
     })
 }
 
@@ -339,6 +345,8 @@ fn optimize(data: Vec<u8>, quality: u8) -> Result<PipelineResult, SlimgError> {
     Ok(PipelineResult {
         data: result.data,
         format: Format::from_core(result.format),
+        width: result.width,
+        height: result.height,
     })
 }
 
