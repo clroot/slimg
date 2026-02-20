@@ -4,15 +4,15 @@ import { FormatSelect } from "./FormatSelect";
 import { QualitySlider } from "./QualitySlider";
 
 const DEFAULT_FORMAT = "jpeg";
-const DEFAULT_QUALITY = 80;
 
 interface ConvertOptionsProps {
+  defaultQuality: number;
   onChange: (options: Partial<ProcessOptions>) => void;
 }
 
-export function ConvertOptions({ onChange }: ConvertOptionsProps) {
+export function ConvertOptions({ defaultQuality, onChange }: ConvertOptionsProps) {
   const [format, setFormat] = useState(DEFAULT_FORMAT);
-  const [quality, setQuality] = useState(DEFAULT_QUALITY);
+  const [quality, setQuality] = useState(defaultQuality);
 
   const emitChange = useCallback(
     (fmt: string, q: number) => {

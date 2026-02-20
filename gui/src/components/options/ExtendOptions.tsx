@@ -5,19 +5,19 @@ import { Input } from "@/components/ui/input";
 import { FormatSelect } from "./FormatSelect";
 import { QualitySlider } from "./QualitySlider";
 
-const DEFAULT_QUALITY = 80;
 const DEFAULT_FILL_COLOR = "#FFFFFF";
 
 interface ExtendOptionsProps {
+  defaultQuality: number;
   onChange: (options: Partial<ProcessOptions>) => void;
 }
 
-export function ExtendOptions({ onChange }: ExtendOptionsProps) {
+export function ExtendOptions({ defaultQuality, onChange }: ExtendOptionsProps) {
   const [width, setWidth] = useState<number | undefined>(undefined);
   const [height, setHeight] = useState<number | undefined>(undefined);
   const [fillColor, setFillColor] = useState(DEFAULT_FILL_COLOR);
   const [format, setFormat] = useState("same");
-  const [quality, setQuality] = useState(DEFAULT_QUALITY);
+  const [quality, setQuality] = useState(defaultQuality);
 
   const emitChange = useCallback(
     (state: {

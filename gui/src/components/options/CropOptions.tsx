@@ -8,20 +8,19 @@ import { QualitySlider } from "./QualitySlider";
 
 type CropMode = "region" | "aspect";
 
-const DEFAULT_QUALITY = 80;
-
 interface CropOptionsProps {
+  defaultQuality: number;
   onChange: (options: Partial<ProcessOptions>) => void;
 }
 
-export function CropOptions({ onChange }: CropOptionsProps) {
+export function CropOptions({ defaultQuality, onChange }: CropOptionsProps) {
   const [cropMode, setCropMode] = useState<CropMode>("region");
   const [x, setX] = useState<number | undefined>(undefined);
   const [y, setY] = useState<number | undefined>(undefined);
   const [width, setWidth] = useState<number | undefined>(undefined);
   const [height, setHeight] = useState<number | undefined>(undefined);
   const [format, setFormat] = useState("same");
-  const [quality, setQuality] = useState(DEFAULT_QUALITY);
+  const [quality, setQuality] = useState(defaultQuality);
 
   const emitChange = useCallback(
     (state: {

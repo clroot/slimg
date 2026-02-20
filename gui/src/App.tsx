@@ -214,6 +214,7 @@ function App() {
                 isBatchMode={isBatchMode}
                 processError={currentError}
                 defaultOverwrite={settings.overwrite}
+                defaultQuality={settings.defaultQuality}
                 onOptionsChange={mergeOptions}
                 onProcess={handleProcess}
               />
@@ -345,6 +346,7 @@ function FileListWithOptions({
   isBatchMode,
   processError,
   defaultOverwrite,
+  defaultQuality,
   onOptionsChange,
   onProcess,
 }: {
@@ -354,6 +356,7 @@ function FileListWithOptions({
   isBatchMode: boolean;
   processError: string | null;
   defaultOverwrite: boolean;
+  defaultQuality: number;
   onOptionsChange: (options: Partial<ProcessOptions>) => void;
   onProcess: () => void;
 }) {
@@ -390,6 +393,7 @@ function FileListWithOptions({
         <OptionsPanel
           feature={activeFeature}
           imageInfo={files[0]?.info}
+          defaultQuality={defaultQuality}
           onChange={onOptionsChange}
         />
 

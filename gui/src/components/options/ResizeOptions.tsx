@@ -8,8 +8,6 @@ import { QualitySlider } from "./QualitySlider";
 
 type ResizeMode = "width" | "height" | "exact" | "fit";
 
-const DEFAULT_QUALITY = 80;
-
 const RESIZE_MODES: { value: ResizeMode; label: string }[] = [
   { value: "width", label: "By Width" },
   { value: "height", label: "By Height" },
@@ -18,16 +16,17 @@ const RESIZE_MODES: { value: ResizeMode; label: string }[] = [
 ];
 
 interface ResizeOptionsProps {
+  defaultQuality: number;
   onChange: (options: Partial<ProcessOptions>) => void;
   imageInfo?: ImageInfo;
 }
 
-export function ResizeOptions({ onChange, imageInfo }: ResizeOptionsProps) {
+export function ResizeOptions({ defaultQuality, onChange, imageInfo }: ResizeOptionsProps) {
   const [resizeMode, setResizeMode] = useState<ResizeMode>("width");
   const [width, setWidth] = useState<number | undefined>(undefined);
   const [height, setHeight] = useState<number | undefined>(undefined);
   const [format, setFormat] = useState("same");
-  const [quality, setQuality] = useState(DEFAULT_QUALITY);
+  const [quality, setQuality] = useState(defaultQuality);
 
   const emitChange = useCallback(
     (state: {

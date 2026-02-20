@@ -2,14 +2,13 @@ import { useState, useCallback, useEffect } from "react";
 import type { ProcessOptions } from "@/lib/tauri";
 import { QualitySlider } from "./QualitySlider";
 
-const DEFAULT_QUALITY = 80;
-
 interface OptimizeOptionsProps {
+  defaultQuality: number;
   onChange: (options: Partial<ProcessOptions>) => void;
 }
 
-export function OptimizeOptions({ onChange }: OptimizeOptionsProps) {
-  const [quality, setQuality] = useState(DEFAULT_QUALITY);
+export function OptimizeOptions({ defaultQuality, onChange }: OptimizeOptionsProps) {
+  const [quality, setQuality] = useState(defaultQuality);
 
   const emitChange = useCallback(
     (q: number) => {

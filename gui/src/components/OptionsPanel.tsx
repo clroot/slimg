@@ -9,24 +9,26 @@ import { ExtendOptions } from "@/components/options/ExtendOptions";
 interface OptionsPanelProps {
   feature: Feature;
   imageInfo?: ImageInfo;
+  defaultQuality: number;
   onChange: (options: Partial<ProcessOptions>) => void;
 }
 
 export function OptionsPanel({
   feature,
   imageInfo,
+  defaultQuality,
   onChange,
 }: OptionsPanelProps) {
   switch (feature) {
     case "convert":
-      return <ConvertOptions onChange={onChange} />;
+      return <ConvertOptions defaultQuality={defaultQuality} onChange={onChange} />;
     case "optimize":
-      return <OptimizeOptions onChange={onChange} />;
+      return <OptimizeOptions defaultQuality={defaultQuality} onChange={onChange} />;
     case "resize":
-      return <ResizeOptions onChange={onChange} imageInfo={imageInfo} />;
+      return <ResizeOptions defaultQuality={defaultQuality} onChange={onChange} imageInfo={imageInfo} />;
     case "crop":
-      return <CropOptions onChange={onChange} />;
+      return <CropOptions defaultQuality={defaultQuality} onChange={onChange} />;
     case "extend":
-      return <ExtendOptions onChange={onChange} />;
+      return <ExtendOptions defaultQuality={defaultQuality} onChange={onChange} />;
   }
 }
