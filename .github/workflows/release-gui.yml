@@ -101,6 +101,11 @@ jobs:
         shell: bash
         run: echo "SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always" >> $GITHUB_ENV
 
+      - name: Allow pkg-config cross-compilation
+        if: contains(matrix.args, 'x86_64-apple-darwin')
+        shell: bash
+        run: echo "PKG_CONFIG_ALLOW_CROSS=1" >> $GITHUB_ENV
+
       # ── Frontend ────────────────────────────────────────────
       - name: Install frontend dependencies
         working-directory: gui
