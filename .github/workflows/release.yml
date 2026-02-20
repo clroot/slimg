@@ -43,6 +43,7 @@ on:
   push:
     tags:
       - '**[0-9]+.[0-9]+.[0-9]+*'
+      - '!gui-v*'
 
 jobs:
   # Run 'dist plan' (or host) to determine what tasks we need to do
