@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![MSRV](https://img.shields.io/badge/MSRV-1.85+-orange.svg)](https://www.rust-lang.org)
 
-A fast image optimization CLI. Convert, compress, resize, crop, and extend images using modern codecs.
+A fast image optimization tool. Convert, compress, resize, crop, and extend images using modern codecs — available as a CLI and desktop GUI.
 
 [한국어](./README.ko.md)
 
@@ -93,6 +93,17 @@ slimg extend photo.png --aspect 1:1 --transparent
 # Batch processing with format conversion
 slimg convert ./images --format webp --output ./output --recursive --jobs 4
 ```
+
+## Desktop GUI
+
+A cross-platform desktop application built with Tauri v2 + React.
+
+- Drag & drop file/folder input
+- Before/after image comparison preview
+- Batch processing with real-time progress
+- Configurable quality and format settings
+
+Download from [GUI Releases](https://github.com/clroot/slimg/releases?q=gui) (macOS, Linux, Windows).
 
 ## Benchmarks
 

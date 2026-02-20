@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![MSRV](https://img.shields.io/badge/MSRV-1.85+-orange.svg)](https://www.rust-lang.org)
 
-빠른 이미지 최적화 CLI. 최신 코덱을 사용하여 이미지를 변환, 압축, 리사이즈, 크롭, 확장합니다.
+빠른 이미지 최적화 도구. 최신 코덱을 사용하여 이미지를 변환, 압축, 리사이즈, 크롭, 확장합니다 — CLI와 데스크톱 GUI를 모두 지원합니다.
 
 [English](./README.md)
 
@@ -93,6 +93,17 @@ slimg extend photo.png --aspect 1:1 --transparent
 # 배치 처리 + 포맷 변환
 slimg convert ./images --format webp --output ./output --recursive --jobs 4
 ```
+
+## 데스크톱 GUI
+
+Tauri v2 + React로 만든 크로스 플랫폼 데스크톱 애플리케이션입니다.
+
+- 드래그 앤 드롭 파일/폴더 입력
+- 변환 전후 이미지 비교 미리보기
+- 실시간 진행률 표시 배치 처리
+- 품질 및 포맷 설정
+
+[GUI 릴리즈](https://github.com/clroot/slimg/releases?q=gui)에서 다운로드 (macOS, Linux, Windows).
 
 ## 벤치마크
 
