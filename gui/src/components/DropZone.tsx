@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { open } from "@tauri-apps/plugin-dialog";
-import { Upload } from "lucide-react";
+import { Upload, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/tauri";
 
 const SUPPORTED_EXTENSIONS = [
   "jpg",
@@ -20,6 +21,21 @@ function isSupportedImage(path: string): boolean {
   return SUPPORTED_EXTENSIONS.includes(ext);
 }
 
+async function resolveDroppedPaths(paths: string[]): Promise<string[]> {
+  const results: string[] = [];
+  for (const path of paths) {
+    try {
+      const scanned = await api.scanDirectory(path);
+      results.push(...scanned);
+    } catch {
+      if (isSupportedImage(path)) {
+        results.push(path);
+      }
+    }
+  }
+  return results;
+}
+
 interface DropZoneProps {
   onFilesSelected: (paths: string[]) => void;
   disabled?: boolean;
@@ -31,7 +47,7 @@ export function DropZone({ onFilesSelected, disabled = false }: DropZoneProps) {
   useEffect(() => {
     const webview = getCurrentWebviewWindow();
 
-    const unlistenPromise = webview.onDragDropEvent((event) => {
+    const unlistenPromise = webview.onDragDropEvent(async (event) => {
       if (disabled) return;
 
       const { type } = event.payload;
@@ -40,9 +56,9 @@ export function DropZone({ onFilesSelected, disabled = false }: DropZoneProps) {
         setIsDragOver(true);
       } else if (type === "drop") {
         setIsDragOver(false);
-        const supported = event.payload.paths.filter(isSupportedImage);
-        if (supported.length > 0) {
-          onFilesSelected(supported);
+        const resolved = await resolveDroppedPaths(event.payload.paths);
+        if (resolved.length > 0) {
+          onFilesSelected(resolved);
         }
       } else if (type === "leave") {
         setIsDragOver(false);
@@ -54,7 +70,7 @@ export function DropZone({ onFilesSelected, disabled = false }: DropZoneProps) {
     };
   }, [onFilesSelected, disabled]);
 
-  const handleBrowse = useCallback(async () => {
+  const handleBrowseFiles = useCallback(async () => {
     if (disabled) return;
 
     const selected = await open({
@@ -69,6 +85,22 @@ export function DropZone({ onFilesSelected, disabled = false }: DropZoneProps) {
 
     if (selected && selected.length > 0) {
       onFilesSelected(selected);
+    }
+  }, [onFilesSelected, disabled]);
+
+  const handleBrowseFolder = useCallback(async () => {
+    if (disabled) return;
+
+    const selected = await open({
+      directory: true,
+      multiple: false,
+    });
+
+    if (selected) {
+      const files = await api.scanDirectory(selected);
+      if (files.length > 0) {
+        onFilesSelected(files);
+      }
     }
   }, [onFilesSelected, disabled]);
 
@@ -93,16 +125,22 @@ export function DropZone({ onFilesSelected, disabled = false }: DropZoneProps) {
 
       <div className="text-center">
         <p className="text-lg font-medium">
-          {isDragOver ? "Drop images here" : "Drop images here"}
+          Drop images or folders here
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
           Supports JPG, PNG, WebP, AVIF, JXL, QOI
         </p>
       </div>
 
-      <Button variant="outline" size="lg" onClick={handleBrowse} disabled={disabled}>
-        Browse Files
-      </Button>
+      <div className="flex gap-3">
+        <Button variant="outline" size="lg" onClick={handleBrowseFiles} disabled={disabled}>
+          Browse Files
+        </Button>
+        <Button variant="outline" size="lg" onClick={handleBrowseFolder} disabled={disabled}>
+          <FolderOpen className="mr-2 h-4 w-4" />
+          Browse Folder
+        </Button>
+      </div>
     </div>
   );
 }

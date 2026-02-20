@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Sidebar, type Feature } from "@/components/Sidebar";
 import { DropZone } from "@/components/DropZone";
 import { ImagePreview } from "@/components/ImagePreview";
@@ -7,6 +7,8 @@ import { ProcessResultCard } from "@/components/ProcessResultCard";
 import { BatchList } from "@/components/BatchList";
 import { Settings } from "@/components/Settings";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useImageProcess } from "@/hooks/useImageProcess";
 import { useBatchProcess } from "@/hooks/useBatchProcess";
@@ -46,6 +48,12 @@ function App() {
   const [selectedBatchIndex, setSelectedBatchIndex] = useState<
     number | undefined
   >(undefined);
+
+  const mergeOptions = useCallback(
+    (patch: Partial<ProcessOptions>) =>
+      setOptions((prev) => ({ ...prev, ...patch })),
+    []
+  );
 
   const isBatchMode = files.length > 1;
   const hasBatchResult = batchItems.length > 0;
@@ -199,7 +207,8 @@ function App() {
                 isProcessing={isProcessing}
                 isBatchMode={isBatchMode}
                 processError={currentError}
-                onOptionsChange={setOptions}
+                defaultOverwrite={settings.overwrite}
+                onOptionsChange={mergeOptions}
                 onProcess={handleProcess}
               />
             )}
@@ -329,6 +338,7 @@ function FileListWithOptions({
   isProcessing,
   isBatchMode,
   processError,
+  defaultOverwrite,
   onOptionsChange,
   onProcess,
 }: {
@@ -337,6 +347,7 @@ function FileListWithOptions({
   isProcessing: boolean;
   isBatchMode: boolean;
   processError: string | null;
+  defaultOverwrite: boolean;
   onOptionsChange: (options: Partial<ProcessOptions>) => void;
   onProcess: () => void;
 }) {
@@ -375,6 +386,20 @@ function FileListWithOptions({
           imageInfo={files[0]?.info}
           onChange={onOptionsChange}
         />
+
+        <div className="flex items-center gap-3">
+          <Checkbox
+            id="overwrite-option"
+            defaultChecked={defaultOverwrite}
+            onCheckedChange={(checked) =>
+              onOptionsChange({ overwrite: checked === true })
+            }
+          />
+          <Label htmlFor="overwrite-option" className="cursor-pointer text-sm">
+            Overwrite original files
+          </Label>
+        </div>
+
         <Button
           onClick={onProcess}
           disabled={isProcessing}

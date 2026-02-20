@@ -50,6 +50,7 @@ export interface BatchProgress {
 }
 
 export const api = {
+  scanDirectory: (path: string) => invoke<string[]>("scan_directory", { path }),
   loadImage: (path: string) => invoke<ImageInfo>("load_image", { path }),
   processImage: (input: string, options: ProcessOptions) =>
     invoke<ProcessResult>("process_image", { input, options }),
