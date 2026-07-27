@@ -94,6 +94,14 @@ slimg extend photo.png --aspect 1:1 --transparent
 slimg convert ./images --format webp --output ./output --recursive --jobs 4
 ```
 
+## Agent Skill
+
+An [Agent Skill](https://agentskills.io) for slimg is available in [clroot/skills](https://github.com/clroot/skills). It teaches coding agents (Claude Code, Codex, Cursor, etc.) the CLI commands, output-path rules, and format recommendations, so they can convert and optimize images with slimg on your behalf.
+
+```bash
+npx skills add https://github.com/clroot/skills --skill slimg
+```
+
 ## Desktop GUI
 
 A cross-platform desktop application built with Tauri v2 + React.

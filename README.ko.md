@@ -94,6 +94,14 @@ slimg extend photo.png --aspect 1:1 --transparent
 slimg convert ./images --format webp --output ./output --recursive --jobs 4
 ```
 
+## Agent Skill
+
+slimg용 [Agent Skill](https://agentskills.io)을 [clroot/skills](https://github.com/clroot/skills)에서 제공합니다. CLI 명령, 출력 경로 규칙, 포맷 추천 기준을 담고 있어 Claude Code·Codex·Cursor 같은 코딩 에이전트가 slimg로 이미지를 변환·최적화할 수 있습니다.
+
+```bash
+npx skills add https://github.com/clroot/skills --skill slimg
+```
+
 ## 데스크톱 GUI
 
 Tauri v2 + React로 만든 크로스 플랫폼 데스크톱 애플리케이션입니다.
