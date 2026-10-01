@@ -16,6 +16,12 @@ on:
 env:
   VERSION: ${{ inputs.tag }}
 
+# Every job checks out the release tag itself (not github.sha). On a manual
+# dispatch from main this publishes exactly what was tagged while still using
+# the latest version of this workflow, so "fix the workflow on main, then run
+# Publish for the tag" is a safe recovery path. Every publish step below is
+# idempotent, so re-running after a partial failure only fills in the gaps.
+
 permissions:
   contents: write
   id-token: write
@@ -33,36 +39,42 @@ jobs:
       pypi-published: ${{ steps.check.outputs.pypi }}
     steps:
       - id: check
+        shell: bash
         run: |
+          set -euo pipefail
           RELEASE_VERSION="${VERSION#v}"
 
-          # Check crates.io (its API rejects requests without a descriptive User-Agent)
-          if curl -sf -A "slimg-ci (https://github.com/clroot/slimg)" "https://crates.io/api/v1/crates/slimg/$RELEASE_VERSION" > /dev/null 2>&1; then
-            echo "crates=true" >> $GITHUB_OUTPUT
-            echo "✅ crates.io: slimg@$RELEASE_VERSION already published"
-          else
-            echo "crates=false" >> $GITHUB_OUTPUT
-            echo "⏳ crates.io: slimg@$RELEASE_VERSION not found, will publish"
-          fi
+          # 200 -> published, 404 -> not published, anything else -> fail loudly.
+          # A bare `curl -sf` treats every error as "not published"; that is how
+          # a crates.io 403 (missing User-Agent) turned into a doomed re-publish
+          # in v0.6.0. crates.io requires a descriptive User-Agent.
+          published() {
+            local code
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --retry 3 \
+              -A "slimg-ci (https://github.com/clroot/slimg)" "$1") || code="000"
+            case "$code" in
+              200) return 0 ;;
+              404) return 1 ;;
+              *) echo "::error::Unexpected HTTP $code from $1"; exit 1 ;;
+            esac
+          }
 
-          # Check Maven Central
-          MAVEN_URL="https://repo1.maven.org/maven2/io/clroot/slimg/slimg-kotlin/$RELEASE_VERSION/slimg-kotlin-$RELEASE_VERSION.pom"
-          if curl -sf "$MAVEN_URL" > /dev/null 2>&1; then
-            echo "maven=true" >> $GITHUB_OUTPUT
-            echo "✅ Maven Central: slimg-kotlin@$RELEASE_VERSION already published"
-          else
-            echo "maven=false" >> $GITHUB_OUTPUT
-            echo "⏳ Maven Central: slimg-kotlin@$RELEASE_VERSION not found, will publish"
-          fi
+          check() { # <output key> <label> <url>
+            if published "$3"; then
+              echo "$1=true" >> "$GITHUB_OUTPUT"
+              echo "✅ $2@$RELEASE_VERSION already published"
+            else
+              echo "$1=false" >> "$GITHUB_OUTPUT"
+              echo "⏳ $2@$RELEASE_VERSION not found, will publish"
+            fi
+          }
 
-          # Check PyPI
-          if curl -sf "https://pypi.org/pypi/slimg/$RELEASE_VERSION/json" > /dev/null 2>&1; then
-            echo "pypi=true" >> $GITHUB_OUTPUT
-            echo "✅ PyPI: slimg@$RELEASE_VERSION already published"
-          else
-            echo "pypi=false" >> $GITHUB_OUTPUT
-            echo "⏳ PyPI: slimg@$RELEASE_VERSION not found, will publish"
-          fi
+          check crates "crates.io: slimg" \
+            "https://crates.io/api/v1/crates/slimg/$RELEASE_VERSION"
+          check maven "Maven Central: slimg-kotlin" \
+            "https://repo1.maven.org/maven2/io/clroot/slimg/slimg-kotlin/$RELEASE_VERSION/slimg-kotlin-$RELEASE_VERSION.pom"
+          check pypi "PyPI: slimg" \
+            "https://pypi.org/pypi/slimg/$RELEASE_VERSION/json"
 
   # ─────────────────────────────────────────────
   # Publish to crates.io (slimg-core → slimg)
@@ -76,6 +88,8 @@ jobs:
       SYSTEM_DEPS_DAV1D_BUILD_INTERNAL: always
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -86,50 +100,43 @@ jobs:
       - name: Checkout submodules (for slimg-core dav1d build)
         run: git submodule update --init --recursive
 
-      # Skip crates that are already on crates.io, but let every real
-      # failure (auth, network, verification) fail the job instead of
-      # being swallowed.
-      - name: Publish slimg-libjxl-sys
+      # cargo itself refuses to re-publish an existing version, and does so
+      # before packaging anything ("already exists on crates.io index").
+      # Treat exactly that as "skip" and let every other failure (auth,
+      # network, verification) fail the job. No dependency on the crates.io
+      # web API, so no User-Agent / status-code pitfalls.
+      # cargo publish also blocks until the new version is visible in the
+      # index, so dependent crates need no extra sleep in between.
+      - name: Publish crates (slimg-libjxl-sys, slimg-core, slimg)
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        shell: bash
         run: |
-          CRATE_VERSION=$(cargo metadata --no-deps --format-version 1 \
-            | jq -r '.packages[] | select(.name=="slimg-libjxl-sys") | .version')
-          if curl -sf -A "slimg-ci (https://github.com/clroot/slimg)" "https://crates.io/api/v1/crates/slimg-libjxl-sys/${CRATE_VERSION}" > /dev/null; then
-            echo "slimg-libjxl-sys@${CRATE_VERSION} already published, skipping"
-          else
-            # --no-default-features: disable vendored so cmake/bindgen are not needed
-            # --no-verify: skip sandbox build (prebuilt archive not available during packaging)
-            cargo publish -p slimg-libjxl-sys --no-default-features --no-verify
-          fi
+          set -euo pipefail
 
-      - name: Wait for crates.io index (slimg-libjxl-sys)
-        run: sleep 30
+          publish() { # -p <crate> [extra cargo publish args]
+            local log
+            log=$(mktemp)
+            echo "::group::cargo publish $*"
+            if cargo publish "$@" 2>&1 | tee "$log"; then
+              echo "::endgroup::"
+              return 0
+            fi
+            echo "::endgroup::"
+            if grep -Eq 'already exists on crates\.io index|is already uploaded|crate [^ ]+@[^ ]+ already exists' "$log"; then
+              echo "$2 is already on crates.io at this version, skipping"
+              return 0
+            fi
+            echo "::error::cargo publish $* failed"
+            return 1
+          }
 
-      - name: Publish slimg-core
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        run: |
-          RELEASE_VERSION="${VERSION#v}"
-          if curl -sf -A "slimg-ci (https://github.com/clroot/slimg)" "https://crates.io/api/v1/crates/slimg-core/${RELEASE_VERSION}" > /dev/null; then
-            echo "slimg-core@${RELEASE_VERSION} already published, skipping"
-          else
-            cargo publish -p slimg-core
-          fi
-
-      - name: Wait for crates.io index
-        run: sleep 30
-
-      - name: Publish slimg
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        run: |
-          RELEASE_VERSION="${VERSION#v}"
-          if curl -sf -A "slimg-ci (https://github.com/clroot/slimg)" "https://crates.io/api/v1/crates/slimg/${RELEASE_VERSION}" > /dev/null; then
-            echo "slimg@${RELEASE_VERSION} already published, skipping"
-          else
-            cargo publish -p slimg
-          fi
+          # slimg-libjxl-sys has its own version; it is usually already published.
+          # --no-default-features: disable vendored so cmake/bindgen are not needed
+          # --no-verify: skip sandbox build (prebuilt archive not available during packaging)
+          publish -p slimg-libjxl-sys --no-default-features --no-verify
+          publish -p slimg-core
+          publish -p slimg
 
   # ─────────────────────────────────────────────
   # Publish Homebrew formula to tap repository
@@ -227,6 +234,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -283,6 +292,8 @@ jobs:
       SYSTEM_DEPS_DAV1D_BUILD_INTERNAL: always
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -321,6 +332,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Check version consistency
         shell: bash
@@ -339,6 +352,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Download all native libraries
         uses: actions/download-artifact@v4
@@ -426,6 +441,8 @@ jobs:
           - { target: x86_64-pc-windows-msvc,      runner: windows-latest }
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Install system dependencies (macOS)
         if: runner.os == 'macOS'
@@ -480,6 +497,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Build sdist
         uses: PyO3/maturin-action@v1
@@ -503,6 +522,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Check version consistency
         shell: bash
@@ -581,3 +602,5 @@ jobs:
         with:
           packages-dir: dist/
           password: ${{ secrets.PYPI_API_TOKEN }}
+          # Re-runs after a partial upload must not fail on files already there.
+          skip-existing: true
