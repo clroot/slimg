@@ -61,6 +61,15 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
+      # NOTE: Added manually. Re-add after `dist generate`.
+      # Fails fast (before any build, GitHub Release or registry upload) when the
+      # tag and the version files disagree. Must stay a step of `plan`: a failed
+      # dist `plan-jobs` job would NOT stop `host` from running.
+      - name: Preflight (release version consistency)
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ !github.event.pull_request && github.ref_name || '' }}
+        run: bash .github/scripts/check-release-versions.sh "$RELEASE_TAG"
       - name: Install dist
         # we specify bash to get pipefail; it guards against the `curl` command
         # failing. otherwise `sh` won't catch that `curl` returned non-0
