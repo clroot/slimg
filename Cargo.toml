@@ -7,14 +7,14 @@ exclude = ["gui/src-tauri"]
 # slimg (CLI). slimg-libjxl-sys has an independent lifecycle and keeps its
 # own version.
 [workspace.package]
-version = "0.6.0"
+version = "0.6.1"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/clroot/slimg"
 homepage = "https://github.com/clroot/slimg"
 
 [workspace.dependencies]
-slimg-core = { version = "0.6.0", path = "crates/slimg-core" }
+slimg-core = { version = "0.6.1", path = "crates/slimg-core" }
 
 # The profile that 'dist' will build with
 [profile.dist]
